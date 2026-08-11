@@ -302,6 +302,24 @@ async def api_branches():
     return {"branches": branches}
 
 
+@app.get("/api/rescan")
+async def api_rescan():
+    """Clear the entire in-memory cache and re-fetch the branch list from GitHub.
+
+    Does not itself re-score anything — the caller (the frontend) is expected
+    to follow this with /api/score/{branch} calls, which will now be cache
+    misses and compute fresh results. This is what lets the server pick up
+    new commits without a restart.
+    """
+    cleared = len(SCORE_CACHE)
+    SCORE_CACHE.clear()
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        all_names = await fetch_all_branches(client)
+    branches = [n for n in all_names if n not in EXCLUDE_BRANCHES]
+    print(f"[rescan] cleared {cleared} cached score(s) — {len(branches)} branches to rescore")
+    return {"status": "rescanning", "branch_count": len(branches)}
+
+
 @app.get("/api/score/{branch_name:path}")
 async def api_score(branch_name: str):
     branch = branch_name.strip()

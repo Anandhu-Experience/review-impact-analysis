@@ -100,6 +100,8 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f3f6fa;
 .info-box pre{font-family:'Courier New',monospace;font-size:12px;color:#4b4b4b;line-height:1.7;white-space:pre-wrap}
 .info-box .note{font-size:11px;color:#888;margin-top:8px;line-height:1.5}
 @media(max-width:640px){.entry{grid-template-columns:36px 1fr}.bars,.total,.total-lbl{display:none}.kpi-row{grid-template-columns:1fr 1fr}}
+.header.flash{animation:headerFlash .8s ease}
+@keyframes headerFlash{0%{background:#0065B1}50%{background:#00A4EB}100%{background:#0065B1}}
 </style>
 </head>
 <body>
@@ -113,7 +115,7 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f3f6fa;
   </div>
   <div class="header-right">
     <span class="ts" id="ts">Not started</span>
-    <button class="btn btn-header btn-sm" id="refreshBtn" onclick="startScan()" disabled>↻ Refresh</button>
+    <button class="btn btn-header btn-sm" id="refreshBtn" onclick="refreshNow()" disabled>↻ Refresh</button>
   </div>
 </div>
 
@@ -171,7 +173,121 @@ body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f3f6fa;
 </div>
 
 <script>
-let submissions=[], scanning=false;
+let submissions=[], scanning=false, polling=false;
+let countdownTimer=null, secondsLeft=60;
+const POLL_SECONDS=60;
+
+function currentBranchFilters(){
+  const filterPrefix=document.getElementById('branchFilter').value.trim();
+  const excludeSet=new Set(document.getElementById('excludeBranches').value.split(',').map(s=>s.trim()).filter(Boolean));
+  return {filterPrefix,excludeSet};
+}
+
+function applyBranchFilters(allBranches){
+  const {filterPrefix,excludeSet}=currentBranchFilters();
+  return allBranches.filter(n=>!excludeSet.has(n)).filter(n=>!filterPrefix||n.startsWith(filterPrefix));
+}
+
+function flashHeader(){
+  const h=document.querySelector('.header');
+  h.classList.remove('flash'); void h.offsetWidth; h.classList.add('flash');
+  setTimeout(()=>h.classList.remove('flash'),800);
+}
+
+function startCountdown(){
+  clearInterval(countdownTimer);
+  secondsLeft=POLL_SECONDS;
+  updateCountdownDisplay();
+  countdownTimer=setInterval(()=>{
+    secondsLeft--;
+    if(secondsLeft<=0){
+      secondsLeft=POLL_SECONDS;
+      pollForNewBranches();
+    }
+    updateCountdownDisplay();
+  },1000);
+}
+
+function updateCountdownDisplay(){
+  document.getElementById('ts').textContent=`Next scan in: ${secondsLeft}s`;
+}
+
+async function pollForNewBranches(){
+  if(scanning||polling) return;
+  polling=true;
+  try{
+    const {branches:allBranches}=await apiGet('/api/branches');
+    const branches=applyBranchFilters(allBranches);
+    const knownBranches=new Set(submissions.map(s=>s.branch));
+    const newBranches=branches.filter(b=>!knownBranches.has(b));
+
+    if(!newBranches.length) return;
+
+    flashHeader();
+    for(const branch of newBranches){
+      submissions.push({branch,status:'scoring',name:branch,total:0,role:'?'});
+      render(); updateKPIs();
+      try{
+        const result=await apiGet(`/api/score/${encodeBranchPath(branch)}`);
+        submissions[submissions.findIndex(s=>s.branch===branch)]=result;
+      }catch(e){
+        submissions[submissions.findIndex(s=>s.branch===branch)]={
+          branch,status:'error',name:branch,total:0,role:'Unknown',
+          problem:'Error: '+e.message,solution:'—',
+          scores:{llm_craft:{score:0,reason:'Error'},roi_impact:{score:0,reason:'Error'},
+                  product_knowledge:{score:0,reason:'Error'},working_demo:{score:0,reason:'Error'},complexity:{score:0,reason:'Error'}}
+        };
+      }
+      render(); updateKPIs();
+    }
+  }catch(e){
+    console.error('background poll failed:',e.message);
+  }finally{
+    polling=false;
+  }
+}
+
+async function refreshNow(){
+  if(scanning) return;
+  scanning=true;
+  clearInterval(countdownTimer);
+  setStatus('Refresh clicked — clearing cache and rescanning all branches…','active');
+
+  try{
+    await apiGet('/api/rescan');
+    const {branches:allBranches}=await apiGet('/api/branches');
+    const branches=applyBranchFilters(allBranches);
+
+    if(!branches.length){setStatus('No branches found matching your filters.','err');scanning=false;startCountdown();return;}
+
+    for(let i=0;i<branches.length;i++){
+      const branch=branches[i];
+      setStatus(`[${i+1}/${branches.length}] Rescoring: ${branch}`,'active');
+      const idx=submissions.findIndex(s=>s.branch===branch);
+      const scoringEntry={branch,status:'scoring',name:branch,total:0,role:'?'};
+      if(idx>=0) submissions[idx]=scoringEntry; else submissions.push(scoringEntry);
+      render(); updateKPIs();
+
+      try{
+        const result=await apiGet(`/api/score/${encodeBranchPath(branch)}`);
+        submissions[submissions.findIndex(s=>s.branch===branch)]=result;
+      }catch(e){
+        submissions[submissions.findIndex(s=>s.branch===branch)]={
+          branch,status:'error',name:branch,total:0,role:'Unknown',
+          problem:'Error: '+e.message,solution:'—',
+          scores:{llm_craft:{score:0,reason:'Error'},roi_impact:{score:0,reason:'Error'},
+                  product_knowledge:{score:0,reason:'Error'},working_demo:{score:0,reason:'Error'},complexity:{score:0,reason:'Error'}}
+        };
+      }
+      render(); updateKPIs();
+    }
+    setStatus(`✓ Rescan complete — ${branches.length} branches refreshed.`,'active');
+  }catch(e){
+    setStatus('Rescan error: '+e.message,'err');
+  }
+  scanning=false;
+  startCountdown();
+}
 
 async function apiGet(path){
   const r=await fetch(path);
@@ -228,6 +344,7 @@ async function startScan(){
     }
     setStatus(`✓ All ${branches.length} branches scored.`,'active');
     scanning=false;
+    startCountdown();
   }catch(e){
     setStatus('Error: '+e.message,'err');
     scanning=false;
