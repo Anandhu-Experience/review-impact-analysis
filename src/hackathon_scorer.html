@@ -426,6 +426,7 @@ function openDetail(branch){
     {k:'complexity',l:'Complexity (10 pts)'}
   ];
   document.getElementById('mBody').innerHTML=`
+    ${s.demo_screenshot?`<img src="${s.demo_screenshot}" style="width:100%; border-radius:4px; margin-bottom:16px; border:1px solid #d5d9e0; display:block;">`:`<div style="width:100%; height:80px; background:#f3f6fa; border:1px solid #d5d9e0; border-radius:4px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; font-size:12px; color:#888;">No screenshot in demo/ — add one before 13:00</div>`}
     <div class="score-head">
       <div>
         <div style="font-size:12px;color:#888">Role: <strong style="color:#0065B1">${s.role}</strong></div>

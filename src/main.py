@@ -118,6 +118,40 @@ async def get_file(client: httpx.AsyncClient, path: str, branch: str):
         return None
 
 
+IMAGE_EXTENSIONS = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif"}
+
+
+async def get_demo_screenshot(client: httpx.AsyncClient, branch: str):
+    """Return a data: URI for the first image in demo/, or None if absent."""
+    url = f"{GITHUB_API}/repos/{GITHUB_OWNER}/{GITHUB_REPO}/contents/demo?ref={branch}"
+    resp = await client.get(url, headers=_github_headers())
+    if resp.status_code != 200:
+        return None
+    entries = resp.json()
+    if not isinstance(entries, list):
+        return None
+
+    image_entry = None
+    for entry in entries:
+        name = entry.get("name", "").lower()
+        if entry.get("type") == "file" and any(name.endswith(ext) for ext in IMAGE_EXTENSIONS):
+            image_entry = entry
+            break
+    if image_entry is None:
+        return None
+
+    ext = "." + image_entry["name"].lower().rsplit(".", 1)[-1]
+    mime = IMAGE_EXTENSIONS.get(ext, "image/png")
+
+    file_resp = await client.get(image_entry["url"], headers=_github_headers())
+    if file_resp.status_code != 200:
+        return None
+    content = file_resp.json().get("content")
+    if not content:
+        return None
+    return f"data:{mime};base64,{content.replace(chr(10), '')}"
+
+
 async def fetch_all_branches(client: httpx.AsyncClient) -> list[str]:
     """Return all branch names in the repo (paginated), before exclusion."""
     names: list[str] = []
@@ -336,6 +370,7 @@ async def api_score(branch_name: str):
         readme = await get_file(client, "README.md", branch)
         prompt_md = await get_file(client, "prompt.md", branch)
         chat_export = await get_file(client, "ai-chat-export.json", branch)
+        demo_screenshot = await get_demo_screenshot(client, branch)
         try:
             commit_data = await gh_get(client, f"/commits?sha={branch}&per_page=10")
             commits = "\n".join(c["commit"]["message"] for c in commit_data)
@@ -350,6 +385,7 @@ async def api_score(branch_name: str):
     )
 
     result = score_with_claude(readme, prompt_md, chat_export, commits, branch)
+    result["demo_screenshot"] = demo_screenshot
     SCORE_CACHE[branch] = result
     print(f"  ✓ {branch}: {result['total']}/100")
     return result
