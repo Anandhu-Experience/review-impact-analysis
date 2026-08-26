@@ -218,10 +218,19 @@ async function pollForNewBranches(){
   try{
     const {branches:allBranches}=await apiGet('/api/branches');
     const branches=applyBranchFilters(allBranches);
+    const currentSet=new Set(branches);
+
+    const beforeCount=submissions.length;
+    submissions=submissions.filter(s=>currentSet.has(s.branch));
+    const removedCount=beforeCount-submissions.length;
+
     const knownBranches=new Set(submissions.map(s=>s.branch));
     const newBranches=branches.filter(b=>!knownBranches.has(b));
 
-    if(!newBranches.length) return;
+    if(!newBranches.length){
+      if(removedCount>0){ render(); updateKPIs(); }
+      return;
+    }
 
     flashHeader();
     for(const branch of newBranches){
@@ -257,6 +266,9 @@ async function refreshNow(){
     await apiGet('/api/rescan');
     const {branches:allBranches}=await apiGet('/api/branches');
     const branches=applyBranchFilters(allBranches);
+    const currentSet=new Set(branches);
+    submissions=submissions.filter(s=>currentSet.has(s.branch));
+    render(); updateKPIs();
 
     if(!branches.length){setStatus('No branches found matching your filters.','err');scanning=false;startCountdown();return;}
 
