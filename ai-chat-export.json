@@ -1,81 +1,86 @@
 {
-  "export_note": "Compiled directly from the live Claude Code session transcript. This harness has no literal '/export' slash command, so this file was assembled from the actual conversation context rather than produced by running a command named /export. Two real secret values that appeared transiently in tool output during the session (a GitHub PAT and an Anthropic API key) have been redacted below — they were never written to any committed file.",
-  "session_date": "2026-08-11",
+  "export_note": "Assembled from the Claude Code session that planned and built Review Impact Analysis (RIA). This harness has no literal '/export' command, so this record was compiled from the actual conversation and the committed planning/implementation artifacts rather than produced by a command. No secrets are included; any transient tokens from earlier inherited context were never written here.",
   "tool": "Claude Code",
-  "model": "claude-opus-4-8 / claude-sonnet-5",
-  "project": "Hackathon Scorer — Experience.com AI Hackathon backend",
-  "messages": [
+  "model": "claude-opus-4-8",
+  "sessionDates": ["2026-08-25", "2026-08-26"],
+  "project": {
+    "name": "Review Impact Analysis (RIA)",
+    "tagline": "Close the loop on negative feedback",
+    "framing": "An Experience.com / XMP review-intelligence capability, demoed on the restaurant vertical (not a generic restaurant app).",
+    "problem": "Multi-location brands collect reviews easily, but turning a location's 1-2 star reviews into a specific fix and then proving the fix worked is manual, slow, and inconsistent.",
+    "solution": "A closed-loop MVP: detect problems, benchmark peers on the same item, contrast positive peer reviews, derive a beyond-classification root cause, recommend a specific remedy, track the action, then render a before/after verdict and, on failure, the next remedy.",
+    "techStack": {
+      "framework": "React 18 + TypeScript 5 + Vite 5",
+      "ui": "Ant Design v4 + @ant-design/icons",
+      "styling": "styled-components 6",
+      "charts": "Recharts 2",
+      "state": "Zustand 4",
+      "routing": "React Router 6",
+      "data": "mock JSON/TS data + localStorage",
+      "backend": "none (mock AI analysis only)"
+    },
+    "architecturePrinciple": "Business/analysis logic lives only in pure services (no React/antd/store imports, enforced via ESLint). Pages call services; the mock service bodies can be swapped for real Experience.com XMP AI behind identical typed signatures without touching the UI.",
+    "determinism": "No Math.random/Date.now/new Date; a single seeded PRNG (mulberry32); hardcoded ISO dates; authored ground-truth tags; nothing computed is persisted."
+  },
+  "agents": [
+    { "id": "product", "name": "Product / Business Agent", "output": "product-plan.md", "responsibilities": ["Define MVP scope and the 7 owner questions", "User journey as a narrative arc", "Business rules (rating meaning, analyze below 3, multi-problem, 13 categories)", "Quantified ROI thesis", "Success criteria"] },
+    { "id": "ux", "name": "UX / UI Agent", "output": "ux-plan.md", "responsibilities": ["Information architecture and navigation", "Six pages and component placement", "Dashboard / analysis / remedy / improvement experiences", "Empty, loading, and error states", "Demo screenshot target"] },
+    { "id": "data", "name": "Data Architect Agent", "output": "data-plan.md", "responsibilities": ["Entities and relationships", "Canonical TypeScript interfaces and enums", "Two-level menu model for peer comparison", "Before/after data structure", "Deterministic seeding rules"] },
+    { "id": "analysis", "name": "Analysis / AI Agent", "output": "analysis-plan.md", "responsibilities": ["Mock-AI pipeline design", "Problem detection and severity", "Sentiment", "Peer comparison and positive-review matching", "Root cause beyond classification", "Remedy generation", "Before/after improvement analysis"] },
+    { "id": "frontend", "name": "Frontend Architect Agent", "output": "frontend-plan.md", "responsibilities": ["React/component/page architecture", "Zustand store and persistence", "Routing and ProtectedRoute", "styled-components strategy", "AntD v4 usage and the React 18 findDOMNode mitigation"] },
+    { "id": "qa", "name": "Test / QA Agent", "output": "qa-plan.md", "responsibilities": ["Test strategy (manual-first, determinism-focused)", "Functional and demo-scenario acceptance tests", "Edge cases", "Data-validation invariants", "Scorer-readiness checklist"] },
+    { "id": "techlead", "name": "Tech Lead / Review Agent", "output": ["architecture-review.md", "implementation-plan.md"], "responsibilities": ["Cross-agent conflict resolution", "Coverage audit", "Remove unnecessary complexity", "Define implementation order and dependencies", "Synthesize the master implementation plan"] }
+  ],
+  "workflow": {
+    "phase1_requirements": "Product agent first; then UX, Data, Analysis in parallel (depend on Product); then Frontend (needs UX + Data) and QA (needs Data + Analysis).",
+    "phase2_review": "Tech-Lead reads all six plans, resolves conflicts (e.g. component count, verdict-vs-status wording, remedyTable location), audits coverage, produces architecture-review.md.",
+    "phase3_implementation_planning": "Tech-Lead synthesizes implementation-plan.md (phases, tasks, dependencies, files, validation); implementation then proceeds phase by phase with tsc + build checks after each phase.",
+    "dependencies": "Product -> UX/Data/Analysis; UX+Data -> Frontend; Data+Analysis -> QA; all -> Tech-Lead review -> implementation-plan."
+  },
+  "prompts": [
     {
-      "role": "user",
-      "content": "Build a hackathon scoring backend for Experience.com's AI Hackathon on August 26, 2026.\n\nWhat it does: Reads all branches from a GitHub repo, fetches README.md + prompt.md + ai-chat-export.json from each branch, scores each submission using the Anthropic API, and serves a live leaderboard at localhost:3000. The frontend HTML file already exists (hackathon_scorer.html) — build the backend only.\n\n[Full spec: FastAPI + Anthropic SDK + HTTPX + Uvicorn + python-dotenv; .env template with GITHUB_TOKEN, ANTHROPIC_API_KEY, GITHUB_OWNER, GITHUB_REPO, EXCLUDE_BRANCHES, PORT; endpoints GET /, GET /api/branches, GET /api/score/{branch_name}, GET /api/scores; scoring criteria llm_craft(30, capped at 5 without ai-chat-export.json), roi_impact(25), product_knowledge(20), working_demo(15), complexity(10); in-memory caching; graceful handling of missing files; open CORS; per-branch console logging.]"
+      "phase": "planning",
+      "title": "Master planning prompt",
+      "prompt": "Act as Lead Architect for an MVP called Review Impact Analysis. Do NOT implement code yet. First create a complete implementation plan using a multi-agent/agentic workflow. Product objective: help restaurant owners understand what customers are unhappy about, why, how they compare to peers, what successful restaurants do differently, what remedy to take, what action to perform, and whether the action improved feedback. Core flow: Reviews -> Detect Problems -> Analyze -> Peer Comparison -> Positive Review Comparison -> Root Cause -> Remedy -> Action Plan -> Owner Takes Action -> Collect New Reviews -> Before/After Analysis -> Measure Improvement -> Confirm Improvement OR Recommend Next Remedy. Tech stack: React + TypeScript + Vite, Ant Design v4, styled-components, Recharts, Zustand, React Router, mock data, localStorage, no backend, mock AI. Separate business logic from UI (services). Produce product-plan, ux-plan, data-plan, analysis-plan, frontend-plan, qa-plan, architecture-review, and implementation-plan."
     },
     {
-      "role": "assistant",
-      "content": "Read hackathon_scorer.html in full before writing any backend code. Discovered a real architecture conflict: the existing frontend calls api.github.com and api.anthropic.com directly from the browser using a pasted GitHub token — it never calls any /api/ endpoint. Flagged this explicitly to the user instead of silently building unused backend endpoints, and asked how to reconcile it via a clarifying question (modify the frontend to call the new backend vs. leave it untouched as a parallel, unused API)."
+      "phase": "planning",
+      "title": "Per-agent authoring (shared authoritative context)",
+      "prompt": "Each planning agent reads one shared source-of-truth spec (fixed names, types, routes, 13 categories, 6 action statuses, the 6 pages, the 23 components, the before/after mechanism, the pure-services rule, the deterministic seeding rules) and authors exactly one planning document from its perspective, using the exact names verbatim so the documents stay mutually consistent."
     },
     {
-      "role": "user",
-      "content": "Option 1. Modify the HTML to call the backend API. Replace all client-side ghGet(), getFile(), and scoreAI() calls with fetch('/api/branches'), fetch('/api/score/...'), and poll /api/scores for the live leaderboard. The token and API key should never appear in the browser — they stay in .env on the server side only."
+      "phase": "implementation",
+      "title": "Implementation kickoff",
+      "prompt": "The planning phase is approved. Start implementation. Follow the agreed architecture, resolve the known planning conflicts, start with Phase 1, and implement the MVP phase by phase. After each phase run TypeScript checks and the production build and fix errors. Keep UI and business logic separate; use only the agreed tech stack; use mock data and mock AI only; no backend or real AI. Keep the demo scenarios working: Scenario 5 must PASS (Improvement Confirmed), Scenario 6 must FAIL and recommend the next remedy."
     },
     {
-      "role": "assistant",
-      "content": "Built main.py (FastAPI app: GET / serves the HTML; /api/branches lists branches minus EXCLUDE_BRANCHES; /api/score/{branch_name} fetches README.md, prompt.md, ai-chat-export.json and last 10 commits, scores with claude-sonnet-4-6 via the Anthropic SDK, validates/clamps scores against the max-points table, enforces the llm_craft<=5-without-chat-export rule server-side, caches per branch in memory; /api/scores returns the cache). Created .env.template, pinned requirements.txt, and a 3-command README.md. Edited hackathon_scorer.html: removed the GitHub token input field and the client-side ghGet/getFile/scoreAI functions, replaced them with fetch calls to the new backend endpoints, left rendering/KPIs/modal/CSV+HTML export/demo-data untouched. Verified end-to-end: created a venv, installed deps, compiled main.py, started the server, curled all three endpoints against a real public GitHub repo (octocat/Hello-World) to confirm branch listing, file fetching, missing-file handling, path routing for branch names containing '/', and in-memory cache-hit behavior all worked; confirmed the Anthropic SDK call signature against the installed version and confirmed a real 401 from a bad key is caught gracefully; drove the actual browser UI and watched the live leaderboard populate in real time. Cleaned up all test artifacts before finishing."
+      "phase": "implementation",
+      "title": "First working flow (priority)",
+      "prompt": "Build and validate the complete flow end to end: Login -> Dashboard -> Negative Review -> Analysis -> Peer Comparison -> Root Cause -> Remedy -> Action -> Before/After -> Improvement. Then report what was built, files changed, build status, test status, blockers, and the next step."
     },
     {
-      "role": "user",
-      "content": "how do i get the github api token"
-    },
-    {
-      "role": "assistant",
-      "content": "Explained both options: a fine-grained PAT scoped to just the hackathon-aug26 repo with Contents:Read-only (recommended), and a classic PAT with the repo/public_repo scope, with step-by-step instructions for each and where to paste the result into .env."
-    },
-    {
-      "role": "user",
-      "content": "[screenshot of GitHub 'New fine-grained personal access token' form: name=hackathon-scorer, resource owner=Experience-org, expiration=30 days, repository access=Only select repositories -> Experience-org/hackathon-aug26, permissions=Contents:Read-only + Metadata:Read-only] does this look good"
-    },
-    {
-      "role": "assistant",
-      "content": "Confirmed the configuration was correct and minimally scoped (right owner, right single repo, right permission set), noted the org-approval caveat that can apply to fine-grained tokens against an org resource owner, and gave the exact .env line to paste the token into."
-    },
-    {
-      "role": "user",
-      "content": "[screenshot of the 'Select resource owner' dropdown showing geetha-ui, Voce-BuyersRoad, Experience-org] should i change it to geetha-ui"
-    },
-    {
-      "role": "assistant",
-      "content": "Declined to guess — explained the choice depends entirely on which account actually owns the hackathon-aug26 repo (a fact only the user has visibility into), and that whichever is chosen, GITHUB_OWNER in .env must match it or /api/branches will 404. Asked which account actually holds the repo."
-    },
-    {
-      "role": "user",
-      "content": "ok i copied both github and anthropic into .env.template please copy to .env file"
-    },
-    {
-      "role": "assistant",
-      "content": "Copied .env.template to .env as requested. Then proactively flagged a security concern: the real secrets had been pasted into .env.template (the file conventionally meant to be safe to commit/share) rather than only .env, and offered to strip them back out and add a .gitignore."
-    },
-    {
-      "role": "user",
-      "content": "yes"
-    },
-    {
-      "role": "assistant",
-      "content": "Restored .env.template to blank placeholders (secrets remain only in .env) and created .gitignore covering .env, __pycache__/, *.pyc, .venv/."
-    },
-    {
-      "role": "user",
-      "content": "ok now run the application with the actual keys"
-    },
-    {
-      "role": "assistant",
-      "content": "Recreated the venv (had been cleaned up earlier), reinstalled dependencies, started the server with the real .env, and verified via the startup banner and live curl calls that both GITHUB_TOKEN and ANTHROPIC_API_KEY were set and that /api/branches successfully reached the real Experience-org/hackathon-aug26 repo (returned an empty branch list, which is expected/correct since the repo currently has zero branches ahead of the Aug 26 hackathon rather than an auth failure)."
-    },
-    {
-      "role": "user",
-      "content": "Do the following in one shot. No questions. 1) Create README.md and prompt.md with specified submission-card content. 2) Create demo/ and screenshot the running scorer UI as demo/scorer-ui.png. 3) Create src/ and copy main.py, hackathon_scorer.html, requirements.txt into it. 4) Run /export in the terminal, save the output as ai-chat-export.json. 5) git init / remote add origin Experience-org/hackathon-aug26 / checkout -b geetha-chandrasekar/hackathon-scorer / add . / commit / push origin geetha-chandrasekar/hackathon-scorer. Tell me when each step is done and show the final git push output."
-    },
-    {
-      "role": "assistant",
-      "content": "Wrote README.md and prompt.md with the exact submission content provided. Captured demo/scorer-ui.png via headless Chrome against the live localhost:3000 server (no browser/screenshot tool was available that writes directly to a file path, so used Chrome's --headless --screenshot flag instead) and verified the image actually rendered the app rather than a blank/error page. Created src/ and copied the three backend files into it. Flagged that no literal '/export' command exists in this harness and compiled this file directly from the real session transcript instead, redacting the two secret values that had transiently appeared in earlier tool output so they would not end up committed to the repo. Proceeding to git init/branch/add/commit, reviewing 'git status' before committing to confirm .env and .venv/ are excluded by .gitignore and not staged, then push."
+      "phase": "data",
+      "title": "Expand the mock dataset",
+      "prompt": "Keep exactly 10 users and 10 restaurants. Increase reviews to 20-30 per restaurant (200-300 total) and 20-30 shared menu items. Create realistic, meaningful review patterns (not random) covering all 13 categories, with some restaurants better than others per category, shared items for peer comparison, positive peer reviews for every major negative, dates across the last 90 days, and the existing before/after data preserved. Do not change UI or business logic. Validate counts and run TypeScript + production build."
     }
+  ],
+  "implementationPhases": [
+    { "n": 1, "name": "Foundation", "keyTasks": "Vite/React18/TS scaffold, AntD v4 (no StrictMode), theme, ESLint services boundary, clean install", "validation": "tsc + build green; Table+Tooltip smoke test" },
+    { "n": 2, "name": "Mock Data", "keyTasks": "types + deterministic seed (locations, users, catalog, offerings, reviews, scenarios, remedyTable)", "validation": "validateSeed = 0 problems" },
+    { "n": 3, "name": "User/Restaurant Context", "keyTasks": "Zustand store + persist, useVisibleReviews, router, ProtectedRoute, AppLayout, Login", "validation": "login guard + shell render" },
+    { "n": 4, "name": "Dashboard", "keyTasks": "rating summary/trend, problem areas, wake-up call, metric cards", "validation": "charts render inside fixed-height frames" },
+    { "n": 5, "name": "Reviews", "keyTasks": "ReviewTable/ReviewCard, filters, row -> analysis", "validation": "gated visible reviews listed" },
+    { "n": 6, "name": "Review Analysis Engine", "keyTasks": "classifyReview, detectProblems, analyzeReview orchestrator", "validation": "multi-problem detection" },
+    { "n": 7, "name": "Peer Comparison", "keyTasks": "peerComparisonService + PeerComparison component", "validation": "price/rating vs peers on shared item" },
+    { "n": 8, "name": "Price/Quality/Quantity Analysis", "keyTasks": "category severity + evidence rules", "validation": "scenarios 1,2,4 signals" },
+    { "n": 9, "name": "Root Cause", "keyTasks": "rootCauseService + positiveReviewService", "validation": "beyond-classification statement + confidence" },
+    { "n": 10, "name": "Remedy Engine", "keyTasks": "remedyService + tiered remedyTable + RemedyCard", "validation": "specific remedies, not generic" },
+    { "n": 11, "name": "Action Plan", "keyTasks": "actionPlanService, createAction/updateStatus, ActionPlan/ActionItem", "validation": "6-status lifecycle" },
+    { "n": 12, "name": "Before/After Measurement", "keyTasks": "captureSnapshot, getVisibleReviews, baseline capture", "validation": "before snapshot on action creation" },
+    { "n": 13, "name": "Impact & Improvement", "keyTasks": "computeImpact + thresholds, collectNewReviews, Impact page components", "validation": "verdict rendered from deltas" },
+    { "n": 14, "name": "Continuous Improvement", "keyTasks": "getNextRemedy wiring, tier-2 remedy on failed verdict", "validation": "scenario 6 next-remedy loop" },
+    { "n": 15, "name": "UX Polish", "keyTasks": "theming, empty/loading/error states, responsive layout, Reset Demo", "validation": "graceful edge cases" },
+    { "n": 16, "name": "Demo Scenarios", "keyTasks": "tune review data + thresholds so all 6 scenarios land", "validation": "Scenario 5 PASS, Scenario 6 FAIL" },
+    { "n": 17, "name": "QA", "keyTasks": "determinism check, services-boundary lint, full closed-loop walkthrough, demo screenshot", "validation": "all P0 gates pass; build green" }
   ]
 }
