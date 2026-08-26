@@ -1,6 +1,7 @@
 import type { MenuItemCatalog } from '../types';
 
-// 12 canonical dishes. Several are offered by multiple restaurants (the peer-comparison anchor).
+// 26 canonical dishes. Nearly all are offered by 2+ restaurants (the peer-comparison anchor),
+// so the system can compare similar products across restaurants.
 export const menuCatalog: MenuItemCatalog[] = [
   { id: 'cat-01', name: 'Margherita Pizza', foodCategory: 'Pizza' },
   { id: 'cat-02', name: 'Caesar Salad', foodCategory: 'Salad' },
@@ -14,4 +15,18 @@ export const menuCatalog: MenuItemCatalog[] = [
   { id: 'cat-10', name: 'Garlic Naan', foodCategory: 'Bread' },
   { id: 'cat-11', name: 'Iced Latte', foodCategory: 'Beverage' },
   { id: 'cat-12', name: 'French Fries', foodCategory: 'Sides' },
+  { id: 'cat-13', name: 'Pepperoni Pizza', foodCategory: 'Pizza' },
+  { id: 'cat-14', name: 'Greek Salad', foodCategory: 'Salad' },
+  { id: 'cat-15', name: 'Chicken Wings', foodCategory: 'Appetizer' },
+  { id: 'cat-16', name: 'Tomato Soup', foodCategory: 'Soup' },
+  { id: 'cat-17', name: 'Spring Rolls', foodCategory: 'Appetizer' },
+  { id: 'cat-18', name: 'Butter Chicken', foodCategory: 'Curry' },
+  { id: 'cat-19', name: 'Tiramisu', foodCategory: 'Dessert' },
+  { id: 'cat-20', name: 'Cappuccino', foodCategory: 'Beverage' },
+  { id: 'cat-21', name: 'Veggie Wrap', foodCategory: 'Wrap' },
+  { id: 'cat-22', name: 'Grilled Salmon', foodCategory: 'Seafood' },
+  { id: 'cat-23', name: 'Miso Soup', foodCategory: 'Soup' },
+  { id: 'cat-24', name: 'Green Curry', foodCategory: 'Curry' },
+  { id: 'cat-25', name: 'Cheesecake', foodCategory: 'Dessert' },
+  { id: 'cat-26', name: 'Lemonade', foodCategory: 'Beverage' },
 ];

@@ -221,4 +221,166 @@ const raw: Raw[] = [
   { id: 'rev-0149', rmi: 'rmi-06-01', rating: 5, comment: 'One good pizza, finally.', date: '2026-04-05', phase: PA, scenarioId: 'scn-06', cats: [], sent: S.Positive },
 ];
 
-export const reviews: Review[] = build(raw);
+// ─────────────────────────────────────────────────────────────────────────────
+// Expanded, patterned baseline corpus. Existing reviews above (incl. all scenario
+// before/after windows) are left untouched; these ADD breadth so every restaurant has
+// 20–30 reviews, all 13 categories carry negatives, and positive peers exist on shared
+// items. Deterministic: no Math.random/Date.now/new Date; dates spread across the last 90 days.
+// ─────────────────────────────────────────────────────────────────────────────
+const DAY0 = '2026-08-26';
+const DIM2 = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const leap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+function shiftISO(iso: string, delta: number): string {
+  const parts = iso.split('-').map(Number);
+  let y = parts[0], m = parts[1], d = parts[2] + delta;
+  while (d < 1) { m--; if (m < 1) { m = 12; y--; } d += m === 2 && leap(y) ? 29 : DIM2[m - 1]; }
+  for (;;) { const dim = m === 2 && leap(y) ? 29 : DIM2[m - 1]; if (d <= dim) break; d -= dim; m++; if (m > 12) { m = 1; y++; } }
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+type Seg = { rmi: string; cat: ProblemCategory | null; sent: Sentiment; rating: Rating; count: number };
+
+const NEGC: Partial<Record<ProblemCategory, string[]>> = {
+  [P.Price]: ['Way overpriced for what you get.', 'Too expensive, not worth it.', 'Prices keep creeping up.'],
+  [P.Quality]: ['Food was cold and not fresh.', 'Poor quality, felt reheated.', 'Quality has really slipped.'],
+  [P.Quantity]: ['Tiny portion for the price.', 'Left hungry, portions are small.', 'Skimpy serving.'],
+  [P.Taste]: ['Bland and under-seasoned.', 'Flavor was off.', 'Tasted flat, needs work.'],
+  [P.Service]: ['Service was slow and inattentive.', 'Staff ignored our table.', 'Nobody checked on us.'],
+  [P.WaitingTime]: ['Waited far too long.', 'Painfully slow to arrive.', 'Long wait even when quiet.'],
+  [P.Availability]: ['Half the items were sold out.', 'Ran out of what we wanted.', 'Kept running out of stock.'],
+  [P.Staff]: ['Staff were rude.', 'Unfriendly, dismissive staff.', 'Poor attitude from the team.'],
+  [P.Cleanliness]: ['Tables were dirty.', 'Restroom was not clean.', 'Sticky tables, needs a wipe.'],
+  [P.Menu]: ['Very limited menu.', 'Not many options to choose from.', 'Menu felt thin.'],
+  [P.Ambience]: ['Too noisy and cramped.', 'Harsh lighting, loud room.', 'Uncomfortable atmosphere.'],
+  [P.Delivery]: ['Arrived cold and late.', 'Delivery took forever.', 'Order showed up late.'],
+  [P.Packaging]: ['Packaging leaked everywhere.', 'Box was crushed and soggy.', 'Container spilled in transit.'],
+};
+
+const POSC: Partial<Record<ProblemCategory, string[]>> = {
+  [P.Quality]: ['Hot, fresh and delicious.', 'Great quality, cooked perfectly.', 'Consistently fresh.'],
+  [P.Quantity]: ['Generous, filling portion.', 'A great big serving.', 'Plenty of food for the price.'],
+  [P.Price]: ['Excellent value for money.', 'Great price, would return.', 'Cheap and cheerful, great value.'],
+  [P.Service]: ['Quick, attentive service.', 'Friendly and fast service.', 'Staff were attentive and quick.'],
+  [P.WaitingTime]: ['Served fast, no wait at all.', 'In and out quickly.', 'Speedy service, no waiting.'],
+  [P.Cleanliness]: ['Spotless and very clean.', 'Immaculate, spotless tables.', 'Clean throughout.'],
+  [P.Staff]: ['Friendly, welcoming staff.', 'Lovely, helpful team.', 'Warm, friendly service.'],
+  [P.Ambience]: ['Lovely, cozy atmosphere.', 'Great vibe and comfy seating.', 'Relaxed ambience.'],
+  [P.Taste]: ['Beautifully seasoned, full of flavor.', 'Delicious taste.', 'Rich and flavorful.'],
+  [P.Menu]: ['Great menu variety.', 'Lots of tasty options.', 'Loved the choices.'],
+  [P.Delivery]: ['Delivered hot and on time.', 'Fast delivery.', 'Arrived quick and warm.'],
+  [P.Packaging]: ['Well packaged, no leaks.', 'Neat, sturdy packaging.', 'Arrived intact.'],
+};
+
+const POS_GENERIC = ['Really enjoyed it.', 'Solid choice, would come back.', 'Great experience overall.', 'Fresh and tasty.', 'Would recommend.'];
+
+// Per-restaurant patterns: some restaurants weak in specific categories, with strong peers on
+// shared items for comparison. Scenario restaurants keep their target category as the top problem.
+const EXTRA: Array<[string, Seg[]]> = [
+  ['rst-01', [ // poor Quality, poor Quantity, Price complaints (Price stays top = scn-01)
+    { rmi: 'rmi-01-13', cat: P.Quality, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-01-05', cat: P.Quantity, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-01-13', cat: P.Price, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-01-16', cat: P.Ambience, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-01-08', cat: null, sent: S.Positive, rating: 5, count: 2 },
+    { rmi: 'rmi-01-19', cat: null, sent: S.Positive, rating: 4, count: 1 },
+  ]],
+  ['rst-02', [ // Quality (top = scn-02) + Delivery/Packaging/Taste
+    { rmi: 'rmi-02-06', cat: P.Quality, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-02-06', cat: P.Delivery, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-02-06', cat: P.Packaging, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-02-17', cat: P.Taste, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-02-23', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-02-20', cat: null, sent: S.Positive, rating: 4, count: 2 },
+  ]],
+  ['rst-03', [ // Service (top = scn-03) + Taste/Cleanliness/Menu
+    { rmi: 'rmi-03-18', cat: P.Taste, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-03-24', cat: P.Cleanliness, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-03-11', cat: P.Menu, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-03-04', cat: null, sent: S.Positive, rating: 4, count: 3 },
+    { rmi: 'rmi-03-10', cat: null, sent: S.Positive, rating: 5, count: 2 },
+  ]],
+  ['rst-04', [ // Availability (top = scn-04) + Cleanliness/Packaging/Quality
+    { rmi: 'rmi-04-03', cat: P.Cleanliness, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-04-12', cat: P.Packaging, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-04-22', cat: P.Quality, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-04-15', cat: null, sent: S.Positive, rating: 4, count: 3 },
+    { rmi: 'rmi-04-26', cat: null, sent: S.Positive, rating: 4, count: 1 },
+    { rmi: 'rmi-04-15', cat: null, sent: S.Positive, rating: 5, count: 2 },
+  ]],
+  ['rst-05', [ // WaitingTime (top = scn-05; new ones rating 2 so Pad Thai 1★ stays the example)
+    { rmi: 'rmi-05-24', cat: P.WaitingTime, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-05-17', cat: P.Taste, sent: S.Negative, rating: 2, count: 1 },
+    { rmi: 'rmi-05-25', cat: null, sent: S.Positive, rating: 5, count: 3 },
+    { rmi: 'rmi-05-24', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-05-11', cat: null, sent: S.Positive, rating: 4, count: 3 },
+  ]],
+  ['rst-06', [ // Quality (top = scn-06) + Delivery/Packaging
+    { rmi: 'rmi-06-13', cat: P.Quality, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-06-01', cat: P.Delivery, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-06-01', cat: P.Packaging, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-06-15', cat: null, sent: S.Positive, rating: 4, count: 3 },
+    { rmi: 'rmi-06-19', cat: null, sent: S.Positive, rating: 5, count: 2 },
+    { rmi: 'rmi-06-12', cat: null, sent: S.Positive, rating: 4, count: 1 },
+  ]],
+  ['rst-07', [ // strong performer: great Quality/Quantity/Taste (positive peer)
+    { rmi: 'rmi-07-01', cat: P.Quality, sent: S.Positive, rating: 5, count: 2 },
+    { rmi: 'rmi-07-13', cat: P.Quantity, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-07-04', cat: P.Taste, sent: S.Positive, rating: 5, count: 2 },
+    { rmi: 'rmi-07-18', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-07-14', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-07-20', cat: P.Ambience, sent: S.Negative, rating: 2, count: 2 },
+  ]],
+  ['rst-08', [ // strong performer: fast service, no wait, spotless (positive peer)
+    { rmi: 'rmi-08-07', cat: P.WaitingTime, sent: S.Positive, rating: 5, count: 3 },
+    { rmi: 'rmi-08-03', cat: P.Cleanliness, sent: S.Positive, rating: 5, count: 2 },
+    { rmi: 'rmi-08-14', cat: P.Service, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-08-21', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-08-25', cat: null, sent: S.Positive, rating: 4, count: 1 },
+    { rmi: 'rmi-08-02', cat: P.Price, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-08-17', cat: null, sent: S.Positive, rating: 4, count: 1 },
+  ]],
+  ['rst-09', [ // good seafood quality but pricey/noisy
+    { rmi: 'rmi-09-22', cat: P.Price, sent: S.Negative, rating: 2, count: 3 },
+    { rmi: 'rmi-09-06', cat: P.Ambience, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-09-09', cat: P.Staff, sent: S.Negative, rating: 2, count: 1 },
+    { rmi: 'rmi-09-06', cat: P.Quality, sent: S.Positive, rating: 5, count: 3 },
+    { rmi: 'rmi-09-22', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-09-23', cat: null, sent: S.Positive, rating: 4, count: 1 },
+  ]],
+  ['rst-10', [ // great value, friendly, but limited hot-food menu
+    { rmi: 'rmi-10-01', cat: P.Price, sent: S.Positive, rating: 5, count: 3 },
+    { rmi: 'rmi-10-02', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-10-25', cat: null, sent: S.Positive, rating: 4, count: 2 },
+    { rmi: 'rmi-10-20', cat: P.Staff, sent: S.Positive, rating: 4, count: 1 },
+    { rmi: 'rmi-10-21', cat: P.Menu, sent: S.Negative, rating: 2, count: 2 },
+    { rmi: 'rmi-10-26', cat: null, sent: S.Positive, rating: 4, count: 2 },
+  ]],
+];
+
+function genExtra(): Raw[] {
+  const out: Raw[] = [];
+  let seq = 1000;
+  for (const [, segs] of EXTRA) {
+    for (const seg of segs) {
+      for (let i = 0; i < seg.count; i++) {
+        seq += 1;
+        const date = shiftISO(DAY0, -(((seq * 13) % 86) + 2)); // 2–87 days ago
+        let comment: string;
+        if (seg.sent === S.Negative && seg.cat) {
+          const bank = NEGC[seg.cat] ?? ['A disappointing experience.'];
+          comment = bank[i % bank.length];
+        } else if (seg.sent === S.Positive) {
+          const bank = (seg.cat && POSC[seg.cat]) || POS_GENERIC;
+          comment = bank[i % bank.length];
+        } else {
+          comment = 'It was okay, nothing special.';
+        }
+        out.push({ id: `rev-${seq}`, rmi: seg.rmi, rating: seg.rating, comment, date, phase: B, cats: seg.cat ? [seg.cat] : [], sent: seg.sent });
+      }
+    }
+  }
+  return out;
+}
+
+export const reviews: Review[] = build([...raw, ...genExtra()]);
+
