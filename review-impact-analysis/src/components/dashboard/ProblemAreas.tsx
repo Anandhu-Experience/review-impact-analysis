@@ -1,0 +1,38 @@
+import { Card, Empty } from 'antd';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { DetectedProblem, ProblemCategory } from '../../types';
+import { ChartFrame } from '../../styles/ChartFrame';
+
+interface ProblemAreasProps {
+  problems: DetectedProblem[];
+  topN?: number;
+  onSelectCategory?: (category: ProblemCategory, exampleReviewId?: string) => void;
+}
+
+export function ProblemAreas({ problems, topN = 6, onSelectCategory }: ProblemAreasProps) {
+  const data = problems.slice(0, topN).map((p) => ({ category: p.category, frequency: p.frequency, exampleReviewId: p.exampleReviewIds[0], severity: p.severity }));
+  return (
+    <Card title="Problem areas" bodyStyle={{ paddingTop: 12 }}>
+      {data.length === 0 ? (
+        <Empty description="No problems detected" />
+      ) : (
+        <ChartFrame $height={Math.max(200, data.length * 42)}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} layout="vertical" margin={{ left: 24 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis type="category" dataKey="category" width={100} />
+              <Tooltip />
+              <Bar
+                dataKey="frequency"
+                fill="#d32f2f"
+                cursor="pointer"
+                onClick={(d: any) => onSelectCategory?.(d.category, d.exampleReviewId)}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+      )}
+    </Card>
+  );
+}
