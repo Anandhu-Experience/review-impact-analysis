@@ -1,4 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Env / secrets
 .env
-__pycache__/
-*.pyc
-.venv/
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vite/
+*.tsbuildinfo
+
+# Temporary verification artifacts
+_seedcheck.ts
+verify2.mjs
