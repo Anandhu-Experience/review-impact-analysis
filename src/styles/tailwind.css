@@ -1,0 +1,63 @@
+/*
+ * Tailwind 4 entry for the XMP shell.
+ *
+ * Preflight is included again now that Ant Design has been removed — while antd was
+ * present its global CSS and Tailwind's reset fought each other, so preflight was
+ * omitted and utilities imported unlayered. With a single styling system that
+ * workaround is gone.
+ */
+@import 'tailwindcss';
+
+:root {
+  --xmp-background: #ffffff;
+  --xmp-foreground: #16181d;
+  --xmp-card: #ffffff;
+  --xmp-muted: #f7f8fa;
+  --xmp-muted-foreground: #6b7280;
+  --xmp-border: #e3e6ea;
+  --xmp-input: #d7dbe0;
+  --xmp-ring: #1b4db1;
+  --xmp-primary: #16181d;
+  --xmp-primary-foreground: #ffffff;
+  --xmp-accent: #1b4db1;
+  --xmp-accent-soft: #eef3ff;
+  --xmp-accent-border: #cfdcfb;
+  --xmp-destructive: #b42318;
+}
+
+@theme inline {
+  --color-background: var(--xmp-background);
+  --color-foreground: var(--xmp-foreground);
+  --color-card: var(--xmp-card);
+  --color-muted: var(--xmp-muted);
+  --color-muted-foreground: var(--xmp-muted-foreground);
+  --color-border: var(--xmp-border);
+  --color-input: var(--xmp-input);
+  --color-ring: var(--xmp-ring);
+  --color-primary: var(--xmp-primary);
+  --color-primary-foreground: var(--xmp-primary-foreground);
+  --color-accent: var(--xmp-accent);
+  --color-accent-soft: var(--xmp-accent-soft);
+  --color-accent-border: var(--xmp-accent-border);
+  --color-destructive: var(--xmp-destructive);
+
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--xmp-border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--xmp-background);
+    color: var(--xmp-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

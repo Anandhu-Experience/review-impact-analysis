@@ -1,6 +1,7 @@
 /* .eslintrc.cjs — ESLint 8 legacy config.
- * The load-bearing rule is the src/services/** override: pure services must be
- * UI-free and store-free (architecture principle). Enforced by no-restricted-imports.
+ * The load-bearing rule is the src/xmp/lib/** override: the service and permission
+ * seam must stay UI-free, so the mock API can be swapped for the real Supabase/
+ * Postgres layer without touching a single screen. Enforced by no-restricted-imports.
  */
 module.exports = {
   root: true,
@@ -21,23 +22,20 @@ module.exports = {
   },
   overrides: [
     {
-      // Pure-services boundary — src/services/** must be UI-free and store-free.
-      files: ['src/services/**/*.ts'],
+      // Service/permission boundary — src/xmp/lib/** must be UI-free and router-free.
+      files: ['src/xmp/lib/**/*.ts'],
       rules: {
         'no-restricted-imports': ['error', {
           paths: [
-            { name: 'react', message: 'Services must be pure — no React in src/services/**.' },
-            { name: 'react-dom', message: 'Services must be pure — no ReactDOM in src/services/**.' },
-            { name: 'antd', message: 'Services must be pure — no UI framework in src/services/**.' },
-            { name: '@ant-design/icons', message: 'Services must be pure — no icons in src/services/**.' },
-            { name: 'zustand', message: 'Services must be pure — no store library in src/services/**.' },
-            { name: 'styled-components', message: 'Services must be pure — no styling in src/services/**.' },
-            { name: 'recharts', message: 'Services must be pure — no charts in src/services/**.' },
+            { name: 'react', message: 'The lib seam must be pure — no React in src/xmp/lib/**.' },
+            { name: 'react-dom', message: 'The lib seam must be pure — no ReactDOM in src/xmp/lib/**.' },
+            { name: 'react-router-dom', message: 'The lib seam must be pure — no routing in src/xmp/lib/**.' },
+            { name: 'lucide-react', message: 'The lib seam must be pure — no icons in src/xmp/lib/**.' },
           ],
           patterns: [
-            { group: ['**/store/**', '../store', '../../store'], message: 'Services must not import the store. Pages read the store and inject plain data.' },
-            { group: ['**/components/**', '**/pages/**'], message: 'Services must not import components or pages.' },
-            { group: ['react', 'react/*', 'react-dom', 'react-dom/*'], message: 'Services must be pure, React-free modules.' },
+            { group: ['**/components/**', '**/pages/**'], message: 'The lib seam must not import components or pages.' },
+            { group: ['**/session', '**/registry'], message: 'The lib seam must not depend on session or registry — they depend on it.' },
+            { group: ['react', 'react/*', 'react-dom', 'react-dom/*'], message: 'The lib seam must be a pure, React-free module.' },
           ],
         }],
       },

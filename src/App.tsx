@@ -1,27 +1,19 @@
-import { ConfigProvider } from 'antd';
-import { ThemeProvider } from 'styled-components';
-import { RouterProvider } from 'react-router-dom';
-import { theme } from './styles/theme';
-import { GlobalStyle } from './styles/GlobalStyle';
-import { router } from './router/routes';
-import { validateSeed } from './data/seed';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
+import SignInPage from './xmp/pages/SignInPage';
+import { xmpRoutes } from './xmp/routes';
+import { XmpSessionProvider } from './xmp/session';
 
-// Dev-only referential-integrity assertion — surfaces a bad seed immediately.
-if (import.meta.env.DEV) {
-  const problems = validateSeed();
-  if (problems.length) console.error('[RIA] validateSeed found problems:\n' + problems.join('\n'));
-}
+const router = createBrowserRouter([
+  { path: '/signin', element: <SignInPage /> },
+  xmpRoutes,
+  { path: '/', element: <Navigate to="/signin" replace /> },
+  { path: '*', element: <Navigate to="/signin" replace /> },
+]);
 
 export default function App() {
   return (
-    <ConfigProvider
-      componentSize="middle"
-      getPopupContainer={(node) => (node?.parentElement as HTMLElement) ?? document.body}
-    >
-      <ThemeProvider theme={theme}>
-        <GlobalStyle />
-        <RouterProvider router={router} />
-      </ThemeProvider>
-    </ConfigProvider>
+    <XmpSessionProvider>
+      <RouterProvider router={router} />
+    </XmpSessionProvider>
   );
 }
