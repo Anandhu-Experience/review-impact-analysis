@@ -2,7 +2,7 @@ import { Space, Card, Rate, Tag, Typography } from 'antd';
 import type { ProblemCategory, ReviewAnalysis as ReviewAnalysisResult, Remedy } from '../../types';
 import { PeerComparison } from './PeerComparison';
 import { PositiveReviewComparison } from './PositiveReviewComparison';
-import { RootCauseCard } from './RootCauseCard';
+import { RootCauseCard, type AiState } from './RootCauseCard';
 import { RemedyCard } from './RemedyCard';
 
 interface ReviewAnalysisProps {
@@ -12,6 +12,7 @@ interface ReviewAnalysisProps {
   onCreateAction?: (remedy: Remedy) => void;
   onSelectCategory?: (category: ProblemCategory) => void;
   onSelectItem?: (catalogItemId: string) => void;
+  ai?: AiState;
 }
 
 export function ReviewAnalysis({
@@ -21,6 +22,7 @@ export function ReviewAnalysis({
   onCreateAction,
   onSelectCategory,
   onSelectItem,
+  ai,
 }: ReviewAnalysisProps) {
   const { review, problems } = analysis;
   return (
@@ -53,7 +55,7 @@ export function ReviewAnalysis({
 
       <PeerComparison peer={analysis.peer} onSelectMyItem={onSelectItem} />
       <PositiveReviewComparison positive={analysis.positive} />
-      <RootCauseCard rootCause={analysis.rootCause} />
+      <RootCauseCard rootCause={analysis.rootCause} ai={ai} />
       <RemedyCard remedy={analysis.remedy} alreadyPlanned={alreadyPlanned} onCreateAction={onCreateAction} />
     </Space>
   );
