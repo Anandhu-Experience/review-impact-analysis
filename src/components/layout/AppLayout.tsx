@@ -36,20 +36,24 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sidebar openActionCount={openActionCount} topNegativeReviewId={topNegativeReviewId} />
+      <Sidebar
+        openActionCount={openActionCount}
+        topNegativeReviewId={topNegativeReviewId}
+        activeRestaurantId={activeRestaurantId ?? undefined}
+        restaurants={restaurants}
+        onSwitchRestaurant={setActiveRestaurant}
+        onLogout={() => {
+          logout();
+          navigate('/login');
+        }}
+      />
       <Layout>
         <Header
           userName={user?.name ?? 'Owner'}
           activeRestaurant={activeRestaurant}
-          restaurants={restaurants}
-          onSwitchRestaurant={setActiveRestaurant}
           onResetDemo={resetDemo}
-          onLogout={() => {
-            logout();
-            navigate('/login');
-          }}
         />
-        <Layout.Content style={{ padding: 24 }}>
+        <Layout.Content style={{ padding: '24px 32px 40px' }}>
           <Content>
             <Outlet />
           </Content>

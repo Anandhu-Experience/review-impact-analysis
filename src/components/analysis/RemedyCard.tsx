@@ -13,7 +13,7 @@ export function RemedyCard({ remedy, alreadyPlanned, onCreateAction }: RemedyCar
     <Card
       title={<span><ToolOutlined /> Recommended remedy</span>}
       extra={<Tag color={remedy.tier === 1 ? 'blue' : 'purple'}>Tier {remedy.tier}</Tag>}
-      style={{ borderLeft: '4px solid #1f6feb' }}
+      style={{ borderLeft: '4px solid #1b4db1' }}
     >
       <Typography.Title level={4} style={{ marginTop: 0 }}>{remedy.title}</Typography.Title>
       <Typography.Paragraph type="secondary">{remedy.description}</Typography.Paragraph>

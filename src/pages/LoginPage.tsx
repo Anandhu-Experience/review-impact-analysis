@@ -1,68 +1,190 @@
 import { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Space, Tag } from 'antd';
+import { Button, Input, Typography } from 'antd';
+import { ArrowRightOutlined } from '@ant-design/icons';
 import { Navigate, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useRIAStore } from '../store/useRIAStore';
 import { seed } from '../data/seed';
+import { theme } from '../styles/theme';
 
 const Screen = styled.div`
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1f6feb 0%, #1552b0 100%);
+  background: ${({ theme }) => theme.colors.muted};
   padding: 24px;
 `;
 
-// Primary demo accounts surfaced as quick-pick chips (Scenario 5 hero first).
+const Card = styled.div`
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radius.lg};
+  box-shadow: ${({ theme }) => theme.shadow.card};
+`;
+
+const Legend = styled.div`
+  margin-bottom: 8px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+`;
+
+// Owner rows read as pickable cards rather than a dropdown — the identity you sign in as is
+// the one decision on this screen, so it is visible instead of hidden behind a control.
+const OwnerOption = styled.label<{ $selected: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid
+    ${({ $selected, theme }) => ($selected ? theme.colors.brandBorder : theme.colors.border)};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: ${({ $selected, theme }) => ($selected ? theme.colors.brandSoft : theme.colors.surface)};
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+
+  & + & {
+    margin-top: 6px;
+  }
+
+  &:hover {
+    background: ${({ $selected, theme }) => ($selected ? theme.colors.brandSoft : theme.colors.muted)};
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: ${({ theme }) => theme.colors.brand};
+  }
+`;
+
+// Primary demo accounts surfaced as sign-in identities (Scenario 5 hero first).
 const DEMO_EMAILS = ['somchai@thaiorchid.test', 'gina@pizzacorner.test', 'marco@bellanapoli.test'];
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const login = useRIAStore((s) => s.login);
   const currentUserId = useRIAStore((s) => s.currentUserId);
+  const [selected, setSelected] = useState(DEMO_EMAILS[0]);
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   if (currentUserId) return <Navigate to="/dashboard" replace />;
 
-  const submit = (value: string) => {
+  // A typed address wins over the picked demo owner; empty input falls back to the selection.
+  const submit = () => {
+    const value = email.trim() || selected;
     if (login(value)) navigate('/dashboard');
     else setError('No owner found for that email.');
   };
 
   return (
     <Screen>
-      <Card style={{ width: 420, borderRadius: 12 }}>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <Typography.Text style={{ color: '#1f6feb', letterSpacing: 1, fontSize: 12 }}>EXPERIENCE.COM · XMP</Typography.Text>
-          <Typography.Title level={3} style={{ margin: '6px 0 0' }}>Review Impact Analysis</Typography.Title>
-          <Typography.Text type="secondary">Close the loop on negative feedback</Typography.Text>
+      <Card>
+        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>RIA</span>
+            <span
+              style={{
+                padding: '2px 6px',
+                borderRadius: 4,
+                background: theme.colors.brandSoft,
+                color: theme.colors.brand,
+                fontFamily: theme.font.mono,
+                fontSize: 10,
+                fontWeight: 500,
+              }}
+            >
+              impact loop
+            </span>
+          </div>
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+            Experience.com — close the loop on negative feedback
+          </Typography.Text>
         </div>
-        <Form layout="vertical" onFinish={() => submit(email)}>
-          <Form.Item label="Owner email" validateStatus={error ? 'error' : ''} help={error ?? undefined}>
-            <Input
-              placeholder="somchai@thaiorchid.test"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(null); }}
-              onPressEnter={() => submit(email)}
-            />
-          </Form.Item>
-          <Button type="primary" block htmlType="submit">Sign in</Button>
-        </Form>
-        <div style={{ marginTop: 16 }}>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>Demo owners:</Typography.Text>
-          <Space wrap style={{ marginTop: 8 }}>
-            {DEMO_EMAILS.map((e) => {
-              const name = seed.users.find((u) => u.email === e)?.name ?? e;
-              return (
-                <Tag key={e} color="blue" style={{ cursor: 'pointer' }} onClick={() => { setEmail(e); submit(e); }}>
-                  {name}
-                </Tag>
-              );
-            })}
-          </Space>
+
+        <fieldset style={{ margin: '0 0 20px', padding: 0, border: 'none' }}>
+          <Legend as="legend">Sign in as</Legend>
+          {DEMO_EMAILS.map((e) => {
+            const user = seed.users.find((u) => u.email === e);
+            const isSelected = selected === e && !email.trim();
+            return (
+              <OwnerOption key={e} $selected={isSelected}>
+                <input
+                  type="radio"
+                  name="owner"
+                  value={e}
+                  checked={isSelected}
+                  onChange={() => {
+                    setSelected(e);
+                    setEmail('');
+                    setError(null);
+                  }}
+                />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>
+                    {user?.name ?? e}
+                  </span>
+                  <span
+                    style={{
+                      display: 'block',
+                      color: theme.colors.textMuted,
+                      fontFamily: theme.font.mono,
+                      fontSize: 10.5,
+                    }}
+                  >
+                    {e}
+                  </span>
+                </span>
+              </OwnerOption>
+            );
+          })}
+        </fieldset>
+
+        <div style={{ marginBottom: 20 }}>
+          <Legend as="label" htmlFor="owner-email">
+            Or another owner email
+          </Legend>
+          <Input
+            id="owner-email"
+            placeholder="owner@restaurant.test"
+            value={email}
+            status={error ? 'error' : undefined}
+            onChange={(ev) => {
+              setEmail(ev.target.value);
+              setError(null);
+            }}
+            onPressEnter={submit}
+          />
+          {error ? (
+            <div style={{ marginTop: 4, color: theme.colors.danger, fontSize: 11.5 }}>{error}</div>
+          ) : null}
         </div>
+
+        <Button type="primary" size="large" block onClick={submit}>
+          Sign in
+          <ArrowRightOutlined />
+        </Button>
+
+        <Typography.Paragraph
+          type="secondary"
+          style={{
+            margin: '16px 0 0',
+            paddingTop: 12,
+            borderTop: `1px solid ${theme.colors.border}`,
+            fontSize: 11,
+            lineHeight: 1.6,
+          }}
+        >
+          Demo data only — no password, no network. Each owner sees the restaurants on their own
+          account; switching owners switches the entire review set.
+        </Typography.Paragraph>
       </Card>
     </Screen>
   );

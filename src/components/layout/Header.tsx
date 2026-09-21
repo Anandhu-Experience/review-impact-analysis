@@ -1,17 +1,19 @@
-import { Layout, Select, Button, Modal, Typography } from 'antd';
-import { ReloadOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Layout, Button, Modal, Typography } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import { theme } from '../../styles/theme';
 import type { Restaurant } from '../../types';
 
 interface HeaderProps {
   userName: string;
   activeRestaurant: Restaurant | undefined;
-  restaurants: Restaurant[];
-  onSwitchRestaurant: (restaurantId: string) => void;
   onResetDemo: () => void;
-  onLogout: () => void;
 }
 
-export function Header({ userName, activeRestaurant, restaurants, onSwitchRestaurant, onResetDemo, onLogout }: HeaderProps) {
+const { colors } = theme;
+
+// Flat app bar in the XMP idiom: context on the left, account + escape hatch on the right.
+// Restaurant switching and sign-out live in the sidebar footer.
+export function Header({ userName, activeRestaurant, onResetDemo }: HeaderProps) {
   const confirmReset = () =>
     Modal.confirm({
       title: 'Reset demo?',
@@ -22,28 +24,48 @@ export function Header({ userName, activeRestaurant, restaurants, onSwitchRestau
     });
 
   return (
-    <Layout.Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb' }}>
-      <div style={{ lineHeight: 1.2 }}>
-        <Typography.Text strong style={{ fontSize: 16 }}>Review Impact Analysis</Typography.Text>
-        <div style={{ fontSize: 11, color: '#6b7280' }}>Close the loop on negative feedback</div>
+    <Layout.Header
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        height: theme.layout.headerHeight,
+        padding: '0 24px',
+        background: colors.surface,
+        borderBottom: `1px solid ${colors.border}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+      }}
+    >
+      <div style={{ minWidth: 0, lineHeight: 1.3 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>
+          Review Impact Analysis
+        </div>
+        <div style={{ fontSize: 12, color: colors.textMuted }}>
+          {activeRestaurant ? activeRestaurant.name : 'Close the loop on negative feedback'}
+        </div>
       </div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Restaurant</div>
-          <Select
-            size="small"
-            style={{ minWidth: 180 }}
-            value={activeRestaurant?.id}
-            onChange={onSwitchRestaurant}
-            options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
-          />
+        <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
+          <div
+            style={{
+              color: colors.textMuted,
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Owner
+          </div>
+          <Typography.Text style={{ fontSize: 13, fontWeight: 500 }}>{userName}</Typography.Text>
         </div>
-        <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Owner</div>
-          <Typography.Text>{userName}</Typography.Text>
-        </div>
-        <Button size="small" danger ghost icon={<ReloadOutlined />} onClick={confirmReset}>Reset Demo</Button>
-        <Button size="small" icon={<LogoutOutlined />} onClick={onLogout} />
+        <Button size="small" icon={<ReloadOutlined />} onClick={confirmReset}>
+          Reset demo
+        </Button>
       </div>
     </Layout.Header>
   );
