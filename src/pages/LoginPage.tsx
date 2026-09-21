@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Button, Input, Typography } from 'antd';
+import { Button, Input, Segmented, Typography } from 'antd';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import { Navigate, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useRIAStore } from '../store/useRIAStore';
 import { seed } from '../data/seed';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { theme } from '../styles/theme';
 
 const Screen = styled.div`
@@ -69,19 +70,39 @@ const DEMO_EMAILS = ['somchai@thaiorchid.test', 'gina@pizzacorner.test', 'marco@
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const login = useRIAStore((s) => s.login);
+  const signIn = useRIAStore((s) => s.signIn);
+  const signUp = useRIAStore((s) => s.signUp);
   const currentUserId = useRIAStore((s) => s.currentUserId);
+  const authBusy = useRIAStore((s) => s.authBusy);
+  const authError = useRIAStore((s) => s.authError);
+  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
   const [selected, setSelected] = useState(DEMO_EMAILS[0]);
   const [email, setEmail] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  // Which field the message belongs to, so the ring lands on the offending input rather
+  // than on whichever one happens to support a status prop.
+  const [error, setError] = useState<{ field: 'email' | 'password'; message: string } | null>(null);
 
   if (currentUserId) return <Navigate to="/dashboard" replace />;
 
   // A typed address wins over the picked demo owner; empty input falls back to the selection.
-  const submit = () => {
+  const submit = async () => {
     const value = email.trim() || selected;
-    if (login(value)) navigate('/dashboard');
-    else setError('No owner found for that email.');
+
+    // Without Supabase there is no password to check — the email just picks an owner.
+    if (!isSupabaseConfigured) {
+      if (await signIn(value, '')) navigate('/dashboard');
+      else setError({ field: 'email', message: 'No owner found for that email.' });
+      return;
+    }
+
+    if (password.length < 6) {
+      setError({ field: 'password', message: 'Supabase requires a password of at least 6 characters.' });
+      return;
+    }
+    setError(null);
+    const ok = mode === 'signIn' ? await signIn(value, password) : await signUp(value, password);
+    if (ok) navigate('/dashboard');
   };
 
   return (
@@ -108,6 +129,22 @@ export default function LoginPage() {
             Experience.com — close the loop on negative feedback
           </Typography.Text>
         </div>
+
+        {isSupabaseConfigured ? (
+          <Segmented
+            block
+            style={{ marginBottom: 20 }}
+            value={mode}
+            onChange={(v) => {
+              setMode(v as 'signIn' | 'signUp');
+              setError(null);
+            }}
+            options={[
+              { label: 'Sign in', value: 'signIn' },
+              { label: 'Create account', value: 'signUp' },
+            ]}
+          />
+        ) : null}
 
         <fieldset style={{ margin: '0 0 20px', padding: 0, border: 'none' }}>
           <Legend as="legend">Sign in as</Legend>
@@ -155,20 +192,53 @@ export default function LoginPage() {
             id="owner-email"
             placeholder="owner@restaurant.test"
             value={email}
-            status={error ? 'error' : undefined}
+            status={error?.field === 'email' ? 'error' : undefined}
             onChange={(ev) => {
               setEmail(ev.target.value);
               setError(null);
             }}
-            onPressEnter={submit}
+            onPressEnter={() => void submit()}
           />
-          {error ? (
-            <div style={{ marginTop: 4, color: theme.colors.danger, fontSize: 11.5 }}>{error}</div>
-          ) : null}
         </div>
 
-        <Button type="primary" size="large" block onClick={submit}>
-          Sign in
+        {isSupabaseConfigured ? (
+          <div style={{ marginBottom: 20 }}>
+            <Legend as="label" htmlFor="owner-password">
+              Password
+            </Legend>
+            <Input.Password
+              id="owner-password"
+              placeholder={mode === 'signUp' ? 'At least 6 characters' : 'Your password'}
+              status={error?.field === 'password' ? 'error' : undefined}
+              value={password}
+              onChange={(ev) => {
+                setPassword(ev.target.value);
+                setError(null);
+              }}
+              onPressEnter={() => void submit()}
+            />
+          </div>
+        ) : null}
+
+        {error || authError ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '8px 10px',
+              border: `1px solid ${theme.colors.tone.danger.bg}`,
+              borderRadius: theme.radius.sm,
+              background: theme.colors.tone.danger.bg,
+              color: theme.colors.tone.danger.fg,
+              fontSize: 11.5,
+              lineHeight: 1.5,
+            }}
+          >
+            {error?.message ?? authError}
+          </div>
+        ) : null}
+
+        <Button type="primary" size="large" block loading={authBusy} onClick={() => void submit()}>
+          {mode === 'signUp' ? 'Create account' : 'Sign in'}
           <ArrowRightOutlined />
         </Button>
 
@@ -182,8 +252,9 @@ export default function LoginPage() {
             lineHeight: 1.6,
           }}
         >
-          Demo data only — no password, no network. Each owner sees the restaurants on their own
-          account; switching owners switches the entire review set.
+          {isSupabaseConfigured
+            ? 'Signed in against Supabase. Row-level security decides which reviews the API returns — switching owners changes the data, not just the view. First time on a seeded owner? Create the account with that email and the signup trigger claims the matching owner row.'
+            : 'Demo data only — no password, no network. Each owner sees the restaurants on their own account; switching owners switches the entire review set.'}
         </Typography.Paragraph>
       </Card>
     </Screen>
