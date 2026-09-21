@@ -104,7 +104,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!process.env.ANTHROPIC_API_KEY) {
     // A deliberate 503 rather than a 500: the client reads this as "fall back quietly",
     // which is exactly right when the deployment simply has no key configured.
-    return res.status(503).json({ error: 'AI analysis is not configured on this deployment.' });
+    //
+    // The hint lists only env var NAMES matching /anthropic/i — never values — because the
+    // usual cause of a 503 after someone has "added the key" is a name that is close but not
+    // exact, or a variable scoped to the wrong environment, and neither is visible from
+    // outside otherwise.
+    const seen = Object.keys(process.env).filter((k) => /anthropic/i.test(k));
+    return res.status(503).json({
+      error: 'AI analysis is not configured on this deployment.',
+      hint:
+        seen.length > 0
+          ? `Anthropic-ish variables this deployment can see: ${seen.join(', ')} — but ANTHROPIC_API_KEY is empty or absent.`
+          : 'This deployment sees no environment variable whose name contains "anthropic".',
+    });
   }
 
   const parsed = RequestSchema.safeParse(req.body);
