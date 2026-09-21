@@ -97,14 +97,17 @@ review-impact-analysis/
 
 ```bash
 cd review-impact-analysis
-npm install
+yarn install
 ```
+
+Yarn 4 (Berry), pinned via the `packageManager` field — `corepack enable` first if the
+`yarn` command is missing. `yarn.lock` is the lockfile; there is no npm lockfile.
 
 ## How to run locally
 
 ```bash
 cd review-impact-analysis
-npm run dev
+yarn dev
 # open http://localhost:5173  (sign in via a demo-owner chip, e.g. "Somchai Pat")
 ```
 
@@ -112,11 +115,12 @@ npm run dev
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Vite dev server with HMR (port 5173) |
-| `npm run build` | Type-check (`tsc`) then production build to `dist/` |
-| `npm run preview` | Serve the built app (port 4173) — used to capture demo screenshots |
-| `npm run lint` | ESLint; enforces the pure-services import boundary |
-| `npm run typecheck` | `tsc --noEmit` type-only pass |
+| `yarn dev` | Vite dev server with HMR (port 5173) |
+| `yarn build` | Type-check (`tsc`) then production build to `dist/` |
+| `yarn preview` | Serve the built app (port 4173) — used to capture demo screenshots |
+| `yarn lint` | ESLint; enforces the pure-services import boundary |
+| `yarn typecheck` | `tsc --noEmit` type-only pass |
+| `yarn db:seed-sql` | Regenerate `supabase/seed.sql` from `src/data/**` |
 
 ## Mock data information
 
