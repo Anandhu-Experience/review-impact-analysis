@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '../lib/utils';
 
 const button = cva(
@@ -28,6 +28,15 @@ export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof button> {}
 
-export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return <button className={cn(button({ variant, size }), className)} {...props} />;
-}
+/**
+ * Ref-forwarding is load-bearing, not incidental: Radix's `asChild` triggers
+ * (dropdown menu, popover, dialog) attach a ref to their child to measure it. Without
+ * forwardRef the floating element never gets a reference to position against and the
+ * menu renders off-screen at its pre-measurement transform.
+ */
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, ...props }, ref) => (
+    <button ref={ref} className={cn(button({ variant, size }), className)} {...props} />
+  )
+);
+Button.displayName = 'Button';

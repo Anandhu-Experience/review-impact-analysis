@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import type { ReactElement } from 'react';
 import type { Gate } from './lib/permissions';
-import { AccountsPage } from './pages/AccountsPage';
+import { AccountsPage } from './pages/accounts/AccountsPage';
 import { PlannedScreen } from './pages/PlannedScreen';
 
 export interface ScreenDef {
