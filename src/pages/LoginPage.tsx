@@ -76,8 +76,7 @@ export default function LoginPage() {
   const authBusy = useRIAStore((s) => s.authBusy);
   const authError = useRIAStore((s) => s.authError);
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
-  const [selected, setSelected] = useState(DEMO_EMAILS[0]);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(DEMO_EMAILS[0]);
   const [password, setPassword] = useState('');
   // Which field the message belongs to, so the ring lands on the offending input rather
   // than on whichever one happens to support a status prop.
@@ -85,9 +84,13 @@ export default function LoginPage() {
 
   if (currentUserId) return <Navigate to="/dashboard" replace />;
 
-  // A typed address wins over the picked demo owner; empty input falls back to the selection.
+  // The field is the answer: picking an owner fills it, typing replaces it.
   const submit = async () => {
-    const value = email.trim() || selected;
+    const value = email.trim();
+    if (!value) {
+      setError({ field: 'email', message: 'Pick an owner above or type an email.' });
+      return;
+    }
 
     // Without Supabase there is no password to check — the email just picks an owner.
     if (!isSupabaseConfigured) {
@@ -150,7 +153,9 @@ export default function LoginPage() {
           <Legend as="legend">Sign in as</Legend>
           {DEMO_EMAILS.map((e) => {
             const user = seed.users.find((u) => u.email === e);
-            const isSelected = selected === e && !email.trim();
+            // Checked when the field holds this owner's address — so typing a different one
+            // clears the selection on its own, with no second piece of state to keep in sync.
+            const isSelected = email.trim().toLowerCase() === e.toLowerCase();
             return (
               <OwnerOption key={e} $selected={isSelected}>
                 <input
@@ -159,8 +164,7 @@ export default function LoginPage() {
                   value={e}
                   checked={isSelected}
                   onChange={() => {
-                    setSelected(e);
-                    setEmail('');
+                    setEmail(e);
                     setError(null);
                   }}
                 />
@@ -186,7 +190,7 @@ export default function LoginPage() {
 
         <div style={{ marginBottom: 20 }}>
           <Legend as="label" htmlFor="owner-email">
-            Or another owner email
+            Owner email
           </Legend>
           <Input
             id="owner-email"
