@@ -1,7 +1,17 @@
 import { Card, Button, Result, Typography, Tag } from 'antd';
-import { WarningOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { WarningOutlined, ArrowRightOutlined, SyncOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { DetectedProblem, ProblemCategory } from '../../types';
+import { theme } from '../../styles/theme';
 import { CountLink } from '../common/CountLink';
+
+/** The action already under way for this problem, if there is one. */
+export interface LoopStatus {
+  title: string;
+  status: string;
+  /** Measured actions point at the result; everything else points at the plan. */
+  measured: boolean;
+  onOpen: () => void;
+}
 
 interface WakeUpCallProps {
   restaurantName: string;
@@ -12,6 +22,7 @@ interface WakeUpCallProps {
   onViewCategory?: (category: ProblemCategory) => void;
   onViewNegative?: () => void;
   onViewAll?: () => void;
+  loop?: LoopStatus | null;
 }
 
 export function WakeUpCall({
@@ -23,6 +34,7 @@ export function WakeUpCall({
   onViewCategory,
   onViewNegative,
   onViewAll,
+  loop,
 }: WakeUpCallProps) {
   if (!topProblem) {
     return (
@@ -74,6 +86,43 @@ export function WakeUpCall({
           </Button>
         )}
       </div>
+
+      {/* Without this the dashboard keeps reporting a problem you are already fixing, and the
+          only way to know otherwise is to go looking in the Action Plan. */}
+      {loop ? (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            marginTop: 14,
+            paddingTop: 12,
+            borderTop: `1px solid ${theme.colors.border}`,
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '2px 8px',
+              borderRadius: theme.radius.sm,
+              background: loop.measured ? theme.colors.tone.success.bg : theme.colors.tone.info.bg,
+              color: loop.measured ? theme.colors.tone.success.fg : theme.colors.tone.info.fg,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            {loop.measured ? <CheckCircleOutlined /> : <SyncOutlined />}
+            {loop.status}
+          </span>
+          <Typography.Text style={{ fontSize: 13 }}>{loop.title}</Typography.Text>
+          <Button size="small" onClick={loop.onOpen}>
+            {loop.measured ? 'View impact' : 'Open action plan'}
+          </Button>
+        </div>
+      ) : null}
     </Card>
   );
 }
