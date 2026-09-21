@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRIAStore, useVisibleReviews } from '../store/useRIAStore';
 import { seed } from '../data/seed';
 import { analyzeReview } from '../services/reviewAnalysisService';
+import { reviewsLink } from '../services/reviewFilters';
 import { ReviewAnalysis } from '../components/analysis/ReviewAnalysis';
 import type { Remedy } from '../types';
 
@@ -49,6 +50,8 @@ export default function AnalysisPage() {
       itemName={itemName}
       alreadyPlanned={alreadyPlanned}
       onCreateAction={onCreateAction}
+      onSelectCategory={(category) => navigate(reviewsLink({ category, scope: 'negative' }))}
+      onSelectItem={(item) => navigate(reviewsLink({ item, scope: 'all' }))}
     />
   );
 }

@@ -9,6 +9,8 @@ interface ProblemAreasProps {
   onSelectCategory?: (category: ProblemCategory, exampleReviewId?: string) => void;
 }
 
+const datumOf = (d: any) => d?.payload ?? d;
+
 export function ProblemAreas({ problems, topN = 6, onSelectCategory }: ProblemAreasProps) {
   const data = problems.slice(0, topN).map((p) => ({ category: p.category, frequency: p.frequency, exampleReviewId: p.exampleReviewIds[0], severity: p.severity }));
   return (
@@ -22,12 +24,15 @@ export function ProblemAreas({ problems, topN = 6, onSelectCategory }: ProblemAr
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
               <XAxis type="number" allowDecimals={false} />
               <YAxis type="category" dataKey="category" width={100} />
-              <Tooltip />
+              <Tooltip cursor={{ fill: 'rgba(27,77,177,0.06)' }} />
               <Bar
                 dataKey="frequency"
-                fill="#d32f2f"
+                fill="#f04438"
                 cursor="pointer"
-                onClick={(d: any) => onSelectCategory?.(d.category, d.exampleReviewId)}
+                onClick={(d: any) => {
+                  const datum = datumOf(d);
+                  if (datum?.category) onSelectCategory?.(datum.category, datum.exampleReviewId);
+                }}
               />
             </BarChart>
           </ResponsiveContainer>

@@ -1,5 +1,5 @@
 import { Space, Card, Rate, Tag, Typography } from 'antd';
-import type { ReviewAnalysis as ReviewAnalysisResult, Remedy } from '../../types';
+import type { ProblemCategory, ReviewAnalysis as ReviewAnalysisResult, Remedy } from '../../types';
 import { PeerComparison } from './PeerComparison';
 import { PositiveReviewComparison } from './PositiveReviewComparison';
 import { RootCauseCard } from './RootCauseCard';
@@ -10,9 +10,18 @@ interface ReviewAnalysisProps {
   itemName: string;
   alreadyPlanned: boolean;
   onCreateAction?: (remedy: Remedy) => void;
+  onSelectCategory?: (category: ProblemCategory) => void;
+  onSelectItem?: (catalogItemId: string) => void;
 }
 
-export function ReviewAnalysis({ analysis, itemName, alreadyPlanned, onCreateAction }: ReviewAnalysisProps) {
+export function ReviewAnalysis({
+  analysis,
+  itemName,
+  alreadyPlanned,
+  onCreateAction,
+  onSelectCategory,
+  onSelectItem,
+}: ReviewAnalysisProps) {
   const { review, problems } = analysis;
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -25,11 +34,24 @@ export function ReviewAnalysis({ analysis, itemName, alreadyPlanned, onCreateAct
         <Typography.Paragraph style={{ margin: '8px 0 4px' }}>"{review.comment}"</Typography.Paragraph>
         <Space size={4} wrap>
           <Typography.Text type="secondary">Detected problems:</Typography.Text>
-          {problems.length ? problems.map((p) => <Tag key={p.category} color="red">{p.category} · sev {p.severity}</Tag>) : <Tag>none</Tag>}
+          {problems.length ? (
+            problems.map((p) => (
+              <Tag
+                key={p.category}
+                color="red"
+                style={onSelectCategory ? { cursor: 'pointer' } : undefined}
+                onClick={onSelectCategory ? () => onSelectCategory(p.category) : undefined}
+              >
+                {p.category} · sev {p.severity} · {p.frequency} review{p.frequency === 1 ? '' : 's'}
+              </Tag>
+            ))
+          ) : (
+            <Tag>none</Tag>
+          )}
         </Space>
       </Card>
 
-      <PeerComparison peer={analysis.peer} />
+      <PeerComparison peer={analysis.peer} onSelectMyItem={onSelectItem} />
       <PositiveReviewComparison positive={analysis.positive} />
       <RootCauseCard rootCause={analysis.rootCause} />
       <RemedyCard remedy={analysis.remedy} alreadyPlanned={alreadyPlanned} onCreateAction={onCreateAction} />
