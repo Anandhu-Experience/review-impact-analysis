@@ -1,7 +1,7 @@
 import { Card, Empty, Space, Steps, Typography, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useRIAStore } from '../../store/useRIAStore';
-import { summarizeActionPlan } from '../../services/actionPlanService';
+import { ACTION_STAGE_TITLES, planStage, summarizeActionPlan } from '../../services/actionPlanService';
 import { ActionItem } from './ActionItem';
 
 export function ActionPlan() {
@@ -14,6 +14,7 @@ export function ActionPlan() {
 
   const actions = actionItems.filter((a) => a.restaurantId === activeRestaurantId);
   const summary = summarizeActionPlan(actions);
+  const stage = planStage(actions);
 
   if (actions.length === 0) {
     return (
@@ -35,14 +36,15 @@ export function ActionPlan() {
           size="small"
           responsive
           style={{ marginTop: 16 }}
-          items={[
-            { title: 'Not Started' },
-            { title: 'In Progress' },
-            { title: 'Completed' },
-            { title: 'Monitoring' },
-            { title: 'Confirmed / No Change' },
-          ]}
+          current={stage.current}
+          status={stage.allTerminal ? 'finish' : 'process'}
+          items={ACTION_STAGE_TITLES.map((title) => ({ title }))}
         />
+        {stage.spread ? (
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            Tracking the least-advanced of {actions.length} actions — each action's own status is on its card.
+          </Typography.Text>
+        ) : null}
       </Card>
       {actions.map((a) => (
         <ActionItem
