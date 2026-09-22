@@ -18,7 +18,7 @@ export function ActionPlan() {
 
   if (actions.length === 0) {
     return (
-      <Card>
+      <Card data-tour="action-plan">
         <Empty description="No actions yet — analyze a review and add its remedy here">
           <Button type="primary" onClick={() => navigate('/dashboard')}>Go to dashboard</Button>
         </Empty>
@@ -27,7 +27,7 @@ export function ActionPlan() {
   }
 
   return (
-    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+    <Space direction="vertical" size={16} style={{ width: '100%' }} data-tour="action-plan">
       <Card>
         <Typography.Text strong>
           {summary.total} actions · {summary.inProgress} in progress · {summary.confirmed} confirmed · {summary.monitoring} monitoring

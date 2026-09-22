@@ -11,6 +11,7 @@ interface RemedyCardProps {
 export function RemedyCard({ remedy, alreadyPlanned, onCreateAction }: RemedyCardProps) {
   return (
     <Card
+      data-tour="analysis-remedy"
       title={<span><ToolOutlined /> Recommended remedy</span>}
       extra={<Tag color={remedy.tier === 1 ? 'blue' : 'purple'}>Tier {remedy.tier}</Tag>}
       style={{ borderLeft: '4px solid #1b4db1' }}

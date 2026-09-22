@@ -89,6 +89,7 @@ export default function ReviewsPage() {
 
   return (
     <Card
+      data-tour="reviews-table"
       title={
         <div style={{ lineHeight: 1.3 }}>
           <Typography.Text strong>Reviews</Typography.Text>

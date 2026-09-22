@@ -70,7 +70,7 @@ export default function DashboardPage() {
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       {/* The numbers lead: read the state of the restaurant first, then what to do about it. */}
-      <Row gutter={16}>
+      <Row gutter={16} data-tour="dashboard-metrics">
         <Col xs={12} md={6}>
           <MetricCard
             title="Avg rating"
@@ -144,7 +144,7 @@ export default function DashboardPage() {
         loop={loop}
       />
 
-      <Row gutter={16}>
+      <Row gutter={16} data-tour="dashboard-trend">
         <Col xs={24} md={10}>
           <RatingSummary
             distribution={summary.distribution}

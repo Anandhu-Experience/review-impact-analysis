@@ -30,6 +30,7 @@ export function RootCauseCard({ rootCause, ai }: RootCauseCardProps) {
 
   return (
     <Card
+      data-tour="analysis-rootcause"
       title={
         <span>
           <BulbOutlined /> Likely root cause · {rootCause.category}

@@ -14,7 +14,7 @@ interface PeerComparisonProps {
 export function PeerComparison({ peer, onSelectMyItem }: PeerComparisonProps) {
   if (!peer) {
     return (
-      <Card title="Peer comparison">
+      <Card title="Peer comparison" data-tour="analysis-peer">
         <Empty description="No comparable peer offerings for this item" />
       </Card>
     );
@@ -23,6 +23,7 @@ export function PeerComparison({ peer, onSelectMyItem }: PeerComparisonProps) {
   const drill = onSelectMyItem ? () => onSelectMyItem(peer.catalogItemId) : undefined;
   return (
     <Card
+      data-tour="analysis-peer"
       title={`Peer comparison · ${peer.itemName}`}
       extra={
         drill ? (

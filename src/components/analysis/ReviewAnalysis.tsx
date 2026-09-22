@@ -27,7 +27,7 @@ export function ReviewAnalysis({
   const { review, problems } = analysis;
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      <Card size="small">
+      <Card size="small" data-tour="analysis-review">
         <Space wrap>
           <Rate disabled value={review.rating} />
           <Typography.Text strong>{itemName}</Typography.Text>

@@ -33,11 +33,13 @@ export default function ImpactPage() {
 
   if (!action || !action.impactResult) {
     return (
-      <Result
-        title="No impact measured yet"
-        subTitle="Collect new reviews on an action to see the before/after result."
-        extra={<Button type="primary" onClick={() => navigate('/action-plan')}>Go to Action Plan</Button>}
-      />
+      <div data-tour="impact">
+        <Result
+          title="No impact measured yet"
+          subTitle="Collect new reviews on an action to see the before/after result."
+          extra={<Button type="primary" onClick={() => navigate('/action-plan')}>Go to Action Plan</Button>}
+        />
+      </div>
     );
   }
 
@@ -78,7 +80,7 @@ export default function ImpactPage() {
   };
 
   return (
-    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+    <Space direction="vertical" size={16} style={{ width: '100%' }} data-tour="impact">
       {measured.length > 1 && (
         <Select
           style={{ minWidth: 320 }}

@@ -1,5 +1,5 @@
 import { Layout, Button, Modal, Typography } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { CompassOutlined, ReloadOutlined } from '@ant-design/icons';
 import { theme } from '../../styles/theme';
 import type { Restaurant } from '../../types';
 
@@ -7,13 +7,14 @@ interface HeaderProps {
   userName: string;
   activeRestaurant: Restaurant | undefined;
   onResetDemo: () => void;
+  onStartTour: () => void;
 }
 
 const { colors } = theme;
 
 // Flat app bar in the XMP idiom: context on the left, account + escape hatch on the right.
 // Restaurant switching and sign-out live in the sidebar footer.
-export function Header({ userName, activeRestaurant, onResetDemo }: HeaderProps) {
+export function Header({ userName, activeRestaurant, onResetDemo, onStartTour }: HeaderProps) {
   const confirmReset = () =>
     Modal.confirm({
       title: 'Reset demo?',
@@ -63,6 +64,9 @@ export function Header({ userName, activeRestaurant, onResetDemo }: HeaderProps)
           </div>
           <Typography.Text style={{ fontSize: 13, fontWeight: 500 }}>{userName}</Typography.Text>
         </div>
+        <Button size="small" icon={<CompassOutlined />} onClick={onStartTour}>
+          Take the tour
+        </Button>
         <Button size="small" icon={<ReloadOutlined />} onClick={confirmReset}>
           Reset demo
         </Button>

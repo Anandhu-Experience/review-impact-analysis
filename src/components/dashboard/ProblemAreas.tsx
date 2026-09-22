@@ -14,7 +14,7 @@ const datumOf = (d: any) => d?.payload ?? d;
 export function ProblemAreas({ problems, topN = 6, onSelectCategory }: ProblemAreasProps) {
   const data = problems.slice(0, topN).map((p) => ({ category: p.category, frequency: p.frequency, exampleReviewId: p.exampleReviewIds[0], severity: p.severity }));
   return (
-    <Card title="Problem areas" bodyStyle={{ paddingTop: 12 }}>
+    <Card title="Problem areas" bodyStyle={{ paddingTop: 12 }} data-tour="dashboard-problems">
       {data.length === 0 ? (
         <Empty description="No problems detected" />
       ) : (

@@ -38,14 +38,14 @@ export function WakeUpCall({
 }: WakeUpCallProps) {
   if (!topProblem) {
     return (
-      <Card>
+      <Card data-tour="dashboard-wakeup">
         <Result status="success" title="No pressing problems" subTitle={`Ratings look healthy at ${restaurantName} this period.`} />
       </Card>
     );
   }
   const exampleId = topProblem.exampleReviewIds[0];
   return (
-    <Card style={{ borderLeft: '4px solid #b42318' }}>
+    <Card data-tour="dashboard-wakeup" style={{ borderLeft: '4px solid #b42318' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <Tag color="error" icon={<WarningOutlined />}>Something is wrong</Tag>
