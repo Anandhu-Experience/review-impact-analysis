@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Input, Segmented, Typography } from 'antd';
+import { Button, Input, Typography } from 'antd';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import { Navigate, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -71,11 +71,9 @@ const DEMO_EMAILS = ['somchai@thaiorchid.test', 'gina@pizzacorner.test', 'marco@
 export default function LoginPage() {
   const navigate = useNavigate();
   const signIn = useRIAStore((s) => s.signIn);
-  const signUp = useRIAStore((s) => s.signUp);
   const currentUserId = useRIAStore((s) => s.currentUserId);
   const authBusy = useRIAStore((s) => s.authBusy);
   const authError = useRIAStore((s) => s.authError);
-  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
   const [email, setEmail] = useState(DEMO_EMAILS[0]);
   const [password, setPassword] = useState('');
   // Which field the message belongs to, so the ring lands on the offending input rather
@@ -104,8 +102,7 @@ export default function LoginPage() {
       return;
     }
     setError(null);
-    const ok = mode === 'signIn' ? await signIn(value, password) : await signUp(value, password);
-    if (ok) navigate('/dashboard');
+    if (await signIn(value, password)) navigate('/dashboard');
   };
 
   return (
@@ -132,22 +129,6 @@ export default function LoginPage() {
             Experience.com — close the loop on negative feedback
           </Typography.Text>
         </div>
-
-        {isSupabaseConfigured ? (
-          <Segmented
-            block
-            style={{ marginBottom: 20 }}
-            value={mode}
-            onChange={(v) => {
-              setMode(v as 'signIn' | 'signUp');
-              setError(null);
-            }}
-            options={[
-              { label: 'Sign in', value: 'signIn' },
-              { label: 'Create account', value: 'signUp' },
-            ]}
-          />
-        ) : null}
 
         <fieldset style={{ margin: '0 0 20px', padding: 0, border: 'none' }}>
           <Legend as="legend">Sign in as</Legend>
@@ -212,7 +193,7 @@ export default function LoginPage() {
             </Legend>
             <Input.Password
               id="owner-password"
-              placeholder={mode === 'signUp' ? 'At least 6 characters' : 'Your password'}
+              placeholder="Your password"
               status={error?.field === 'password' ? 'error' : undefined}
               value={password}
               onChange={(ev) => {
@@ -242,7 +223,7 @@ export default function LoginPage() {
         ) : null}
 
         <Button type="primary" size="large" block loading={authBusy} onClick={() => void submit()}>
-          {mode === 'signUp' ? 'Create account' : 'Sign in'}
+          Sign in
           <ArrowRightOutlined />
         </Button>
 
@@ -257,7 +238,7 @@ export default function LoginPage() {
           }}
         >
           {isSupabaseConfigured
-            ? 'Signed in against Supabase. Row-level security decides which reviews the API returns — switching owners changes the data, not just the view. First time on a seeded owner? Create the account with that email and the signup trigger claims the matching owner row.'
+            ? 'Signed in against Supabase. Row-level security decides which reviews the API returns — switching owners changes the data, not just the view.'
             : 'Demo data only — no password, no network. Each owner sees the restaurants on their own account; switching owners switches the entire review set.'}
         </Typography.Paragraph>
       </Card>

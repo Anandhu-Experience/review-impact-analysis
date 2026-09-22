@@ -25,7 +25,6 @@ interface RIAState {
   // actions
   login: (email: string) => boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
-  signUp: (email: string, password: string) => Promise<boolean>;
   initAuth: () => void;
   logout: () => void;
   setActiveRestaurant: (id: string) => void;
@@ -128,29 +127,6 @@ export const useRIAStore = create<RIAState>()(
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) {
           set({ authBusy: false, authError: readableAuthError(error.message) });
-          return false;
-        }
-        return adoptOwner(set);
-      },
-
-      signUp: async (email, password) => {
-        if (!supabase) return get().login(email);
-        set({ authBusy: true, authError: null });
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
-        if (error) {
-          set({ authBusy: false, authError: readableAuthError(error.message) });
-          return false;
-        }
-        // No session on a successful sign-up means the project still requires email
-        // confirmation — which the seeded owners can never complete, since .test addresses
-        // are reserved and undeliverable by design.
-        if (!data.session) {
-          set({
-            authBusy: false,
-            authError:
-              'Account created but not signed in — this project still has email confirmation on. ' +
-              'Turn it off under Authentication → Sign In / Providers → Email, or use a real address.',
-          });
           return false;
         }
         return adoptOwner(set);
