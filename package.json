@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "db:seed-sql": "node scripts/export-seed.mjs"
+    "db:seed-sql": "node scripts/export-seed.mjs",
+    "eval:analyze": "node scripts/evals/analyze-endpoint.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^4.8.3",

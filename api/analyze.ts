@@ -46,7 +46,7 @@ const RootCauseSchema = z.object({
   }),
 });
 
-const RequestSchema = z.object({
+export const RequestSchema = z.object({
   restaurantName: z.string().max(120),
   cuisine: z.string().max(60),
   review: z.object({
@@ -79,6 +79,9 @@ const RequestSchema = z.object({
   negativeThemes: z.array(z.string().max(60)).max(12),
 });
 
+export type AnalyzeInput = z.infer<typeof RequestSchema>;
+export type RootCauseOutput = z.infer<typeof RootCauseSchema>;
+
 const SYSTEM = `You are the analysis engine inside Review Impact Analysis, a tool used by
 independent restaurant owners.
 
@@ -94,6 +97,54 @@ Rules:
   honest answer is more useful than a confident guess.
 - The remedy must be specific enough to start on Monday. "Improve service" is a failure.
 - Write for a busy owner: plain language, no consultant register, no filler.`;
+
+const MODEL = 'claude-sonnet-5';
+
+export type AnalyzeCoreResult =
+  | { status: 'ok'; model: string; analysis: RootCauseOutput }
+  | { status: 'refusal' }
+  | { status: 'empty' };
+
+/**
+ * The model call, isolated from the HTTP shell around it. Same prompt, same schema, same
+ * model the deployed endpoint uses — so an eval calling this directly exercises exactly what
+ * production runs, without needing a server. `handler` below is a thin adapter: parse the
+ * request, call this, map the result to a status code.
+ */
+export async function runAnalysis(input: AnalyzeInput): Promise<AnalyzeCoreResult> {
+  const peerLine = input.peer
+    ? `Same dish at ${input.peer.peerCount} comparable restaurant(s): they average ${input.peer.peerAvgRating}★ and $${input.peer.peerAvgPrice.toFixed(2)}; this restaurant averages ${input.peer.myAvgRating}★ at $${input.peer.myPrice.toFixed(2)} (${input.peer.priceDeltaPct > 0 ? '+' : ''}${input.peer.priceDeltaPct.toFixed(1)}% on price, ${input.peer.ratingGap.toFixed(1)}★ on rating), ranking ${input.peer.rank} of ${input.peer.peerCount + 1}.`
+    : 'No comparable peer offerings exist for this item, so there is no peer benchmark.';
+
+  const prompt = `Restaurant: ${input.restaurantName} (${input.cuisine})
+
+The review:
+"${input.review.comment}"
+${input.review.rating}★ · ${input.review.itemName} · $${input.review.price.toFixed(2)} · ${input.review.date}
+
+Detected problem: ${input.problem.category}, severity ${input.problem.severity}/100, cited in ${input.problem.frequency} negative reviews, which average ${input.problem.avgRatingWhenMentioned}★.
+
+${peerLine}
+
+What peers' happy customers praise on this dish: ${input.positiveThemes.join(', ') || '(nothing recorded)'}
+What this restaurant's unhappy customers cite: ${input.negativeThemes.join(', ') || '(nothing recorded)'}
+
+Give the root cause and one remedy.`;
+
+  const client = new Anthropic();
+  const response = await client.messages.parse({
+    model: MODEL,
+    max_tokens: 16000,
+    thinking: { type: 'adaptive' },
+    system: SYSTEM,
+    messages: [{ role: 'user', content: prompt }],
+    output_config: { format: zodOutputFormat(RootCauseSchema) },
+  });
+
+  if (response.stop_reason === 'refusal') return { status: 'refusal' };
+  if (!response.parsed_output) return { status: 'empty' };
+  return { status: 'ok', model: response.model, analysis: response.parsed_output };
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -123,50 +174,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!parsed.success) {
     return res.status(400).json({ error: 'Malformed analysis request', detail: parsed.error.message });
   }
-  const input = parsed.data;
-
-  const peerLine = input.peer
-    ? `Same dish at ${input.peer.peerCount} comparable restaurant(s): they average ${input.peer.peerAvgRating}★ and $${input.peer.peerAvgPrice.toFixed(2)}; this restaurant averages ${input.peer.myAvgRating}★ at $${input.peer.myPrice.toFixed(2)} (${input.peer.priceDeltaPct > 0 ? '+' : ''}${input.peer.priceDeltaPct.toFixed(1)}% on price, ${input.peer.ratingGap.toFixed(1)}★ on rating), ranking ${input.peer.rank} of ${input.peer.peerCount + 1}.`
-    : 'No comparable peer offerings exist for this item, so there is no peer benchmark.';
-
-  const prompt = `Restaurant: ${input.restaurantName} (${input.cuisine})
-
-The review:
-"${input.review.comment}"
-${input.review.rating}★ · ${input.review.itemName} · $${input.review.price.toFixed(2)} · ${input.review.date}
-
-Detected problem: ${input.problem.category}, severity ${input.problem.severity}/100, cited in ${input.problem.frequency} negative reviews, which average ${input.problem.avgRatingWhenMentioned}★.
-
-${peerLine}
-
-What peers' happy customers praise on this dish: ${input.positiveThemes.join(', ') || '(nothing recorded)'}
-What this restaurant's unhappy customers cite: ${input.negativeThemes.join(', ') || '(nothing recorded)'}
-
-Give the root cause and one remedy.`;
 
   try {
-    const client = new Anthropic();
-    const response = await client.messages.parse({
-      model: 'claude-opus-5',
-      max_tokens: 16000,
-      thinking: { type: 'adaptive' },
-      system: SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
-      output_config: { format: zodOutputFormat(RootCauseSchema) },
-    });
-
-    if (response.stop_reason === 'refusal') {
-      return res.status(502).json({ error: 'The model declined this request.' });
-    }
-    if (!response.parsed_output) {
-      return res.status(502).json({ error: 'The model returned no parseable analysis.' });
-    }
-
-    return res.status(200).json({
-      source: 'ai',
-      model: response.model,
-      analysis: response.parsed_output,
-    });
+    const result = await runAnalysis(parsed.data);
+    if (result.status === 'refusal') return res.status(502).json({ error: 'The model declined this request.' });
+    if (result.status === 'empty') return res.status(502).json({ error: 'The model returned no parseable analysis.' });
+    return res.status(200).json({ source: 'ai', model: result.model, analysis: result.analysis });
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) {
       return res.status(503).json({ error: 'AI analysis is misconfigured (bad API key).' });
