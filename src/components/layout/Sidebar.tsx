@@ -6,6 +6,7 @@ import {
   CheckSquareOutlined,
   RiseOutlined,
   LogoutOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
@@ -164,12 +165,34 @@ export function Sidebar({
 
         <button
           type="button"
-          onClick={onLogout}
+          onClick={() => navigate('/evals')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
             marginTop: 12,
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            color: colors.textMuted,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: 11,
+            fontWeight: 500,
+          }}
+        >
+          <FileSearchOutlined style={{ fontSize: 12 }} />
+          Eval history
+        </button>
+
+        <button
+          type="button"
+          onClick={onLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            marginTop: 8,
             padding: 0,
             border: 'none',
             background: 'none',

@@ -1,0 +1,363 @@
+[
+  {
+    "timestamp": "2026-09-23T04:22:01.504Z",
+    "model": "claude-sonnet-5",
+    "judgeModel": "claude-sonnet-5",
+    "cases": [
+      {
+        "id": "scn-01:rev-0001",
+        "label": "Bella Napoli · Price",
+        "codeChecks": [
+          {
+            "name": "confidence in range",
+            "pass": true,
+            "detail": "confidence=0.65"
+          },
+          {
+            "name": "evidence count 1-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy steps 2-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy not a platitude",
+            "pass": true,
+            "detail": "no banned phrase"
+          },
+          {
+            "name": "evidence cites a figure",
+            "pass": true,
+            "detail": "has a digit"
+          },
+          {
+            "name": "expectedImpact is a real answer",
+            "pass": true,
+            "detail": "ok: \"If portion or price is adjusted to close most of the 25% gap, expect price-complaint volume to drop by half and dish rating to move from 2.2★ toward peer average of 3.7★ within 4-6 weeks.\""
+          }
+        ],
+        "judge": {
+          "beyondClassification": {
+            "pass": true,
+            "reason": "The statement identifies a mechanism (price premium combined with perceived under-portioning causing a failed value equation) rather than simply restating 'price is a problem'."
+          },
+          "grounded": {
+            "pass": false,
+            "reason": "While the price/rating figures and quote match INPUT, the remedy invents unsupported specifics like '14-inch, hand-stretched, imported San Marzano tomatoes' and a 15-20% dough increase that have no basis in the given data."
+          },
+          "remedySpecific": {
+            "pass": true,
+            "reason": "The remedy gives concrete, this-week actions (weigh portions vs 2 peers, drop price to $13.50-$14, add menu callout, track weekly) rather than generic advice."
+          },
+          "expectedImpactSpecific": {
+            "pass": true,
+            "reason": "It names concrete metrics (halving price-complaint volume, rating moving from 2.2★ toward 3.7★) with a timeframe, though the full climb to peer average may be optimistic."
+          },
+          "confidenceCalibrated": {
+            "pass": true,
+            "reason": "0.65 reasonably reflects strong price/rating gaps and consistent theme contrast tempered by a very small peer set (only 3 comparables) and modest review volume (9)."
+          }
+        }
+      },
+      {
+        "id": "scn-02:rev-0011",
+        "label": "Sakura Sushi · Quality",
+        "codeChecks": [
+          {
+            "name": "confidence in range",
+            "pass": true,
+            "detail": "confidence=0.55"
+          },
+          {
+            "name": "evidence count 1-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy steps 2-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy not a platitude",
+            "pass": true,
+            "detail": "no banned phrase"
+          },
+          {
+            "name": "evidence cites a figure",
+            "pass": true,
+            "detail": "has a digit"
+          },
+          {
+            "name": "expectedImpact is a real answer",
+            "pass": true,
+            "detail": "ok: \"If ticket-to-plate time drops under 5 minutes, expect the 'mushy/cold' complaint rate on this dish to fall by roughly half within 3-4 weeks, moving the dish rating from 2.1★ toward the 3.5-4★ range peers see.\""
+          }
+        ],
+        "judge": {
+          "beyondClassification": {
+            "pass": true,
+            "reason": "The statement proposes a specific causal chain (ticket delay → rice cooling → starch re-hardening) rather than simply restating 'quality is bad', satisfying the mechanism requirement."
+          },
+          "grounded": {
+            "pass": false,
+            "reason": "It invents an unsupported within-customer correlation ('the same customers who complain about mushy also say cold and slow') and misattributes the generic positiveThemes list to 'peers' happy reviewers' when the input does not link themes to specific customers or to the peer restaurant."
+          },
+          "remedySpecific": {
+            "pass": true,
+            "reason": "The remedy gives concrete, immediately actionable steps (track ticket times, halve rice batches, use insulated warmer under 30 min, delay fire call) that a kitchen could start this week."
+          },
+          "expectedImpactSpecific": {
+            "pass": true,
+            "reason": "It specifies a magnitude (complaint rate halving) and a rating target range (2.1★ toward 3.5-4★) with a timeframe, and the target plausibly follows from the peer benchmark of 4.2★."
+          },
+          "confidenceCalibrated": {
+            "pass": false,
+            "reason": "0.55 is too high given the causal mechanism rests on an invented same-customer correlation and only a single peer data point, which should pull confidence lower despite the strong severity/frequency numbers."
+          }
+        }
+      },
+      {
+        "id": "scn-03:rev-0021",
+        "label": "The Curry House · Service",
+        "codeChecks": [
+          {
+            "name": "confidence in range",
+            "pass": true,
+            "detail": "confidence=0.55"
+          },
+          {
+            "name": "evidence count 1-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy steps 2-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy not a platitude",
+            "pass": true,
+            "detail": "no banned phrase"
+          },
+          {
+            "name": "evidence cites a figure",
+            "pass": true,
+            "detail": "has a digit"
+          },
+          {
+            "name": "expectedImpact is a real answer",
+            "pass": true,
+            "detail": "ok: \"Should cut service-related complaints by roughly half within a month and lift the dish's star average from 2.7 toward the 3.5-4.0 range, closing some of the gap with the peer's 4.6★.\""
+          }
+        ],
+        "judge": {
+          "beyondClassification": {
+            "pass": true,
+            "reason": "The statement proposes a specific causal mechanism (floor-staffing/ticket-timing gap tied to dish-ordering rush) rather than just restating that service is a problem."
+          },
+          "grounded": {
+            "pass": false,
+            "reason": "Claims that all 6 negative reviews are 'tied to this dish' and specifies a likely 6-8pm rush window, neither of which is stated or derivable from INPUT."
+          },
+          "remedySpecific": {
+            "pass": true,
+            "reason": "The remedy gives concrete, immediately actionable steps (assign a floor checker, set a 5-minute kitchen timer, track wait times this week) rather than generic advice."
+          },
+          "expectedImpactSpecific": {
+            "pass": true,
+            "reason": "It names a specific complaint reduction (roughly half) and a rating range (2.7 to 3.5-4.0), giving measurable, evidence-plausible targets."
+          },
+          "confidenceCalibrated": {
+            "pass": true,
+            "reason": "0.55 reflects moderate evidence—strong severity and rating gap but only a single peer and unverified dish-specific attribution—so the hedged confidence is appropriately calibrated."
+          }
+        }
+      },
+      {
+        "id": "scn-04:rev-0031",
+        "label": "Burger Barn · Availability",
+        "codeChecks": [
+          {
+            "name": "confidence in range",
+            "pass": true,
+            "detail": "confidence=0.55"
+          },
+          {
+            "name": "evidence count 1-4",
+            "pass": true,
+            "detail": "count=3"
+          },
+          {
+            "name": "remedy steps 2-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy not a platitude",
+            "pass": true,
+            "detail": "no banned phrase"
+          },
+          {
+            "name": "evidence cites a figure",
+            "pass": true,
+            "detail": "has a digit"
+          },
+          {
+            "name": "expectedImpact is a real answer",
+            "pass": true,
+            "detail": "ok: \"Should cut sellout-driven 1-star reviews by more than half within a month and close most of the 2.0★ rating gap versus peers, since availability — not taste or price — is the main driver of the low score.\""
+          }
+        ],
+        "judge": {
+          "beyondClassification": {
+            "pass": true,
+            "reason": "The statement identifies a specific causal mechanism—no par-level/prep buffer causing mismatched patty/bun ordering versus demand—rather than just restating that the dish is 'unavailable'."
+          },
+          "grounded": {
+            "pass": false,
+            "reason": "The claim that peer restaurants' happy customers 'praise always in stock' is fabricated, since INPUT's positiveThemes are not attributed to peers and no peer review text or theme breakdown is given."
+          },
+          "remedySpecific": {
+            "pass": true,
+            "reason": "The steps (pull 30-day order history, set a par+20% buffer, assign 2pm/6pm counts, post a running stock count) are concrete and could be started this week."
+          },
+          "expectedImpactSpecific": {
+            "pass": true,
+            "reason": "It names concrete movement—cutting sellout-driven 1-star reviews by more than half and closing most of the 2.0★ rating gap—tied to the evidence's severity and rating figures."
+          },
+          "confidenceCalibrated": {
+            "pass": true,
+            "reason": "0.55 reflects moderate evidence (clear thematic and price/rating gaps but only 2 peers and 6 reviews), avoiding both overconfidence and excessive hedging."
+          }
+        }
+      },
+      {
+        "id": "scn-05:rev-0041",
+        "label": "Thai Orchid · WaitingTime",
+        "codeChecks": [
+          {
+            "name": "confidence in range",
+            "pass": true,
+            "detail": "confidence=0.62"
+          },
+          {
+            "name": "evidence count 1-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy steps 2-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy not a platitude",
+            "pass": true,
+            "detail": "no banned phrase"
+          },
+          {
+            "name": "evidence cites a figure",
+            "pass": true,
+            "detail": "has a digit"
+          },
+          {
+            "name": "expectedImpact is a real answer",
+            "pass": true,
+            "detail": "ok: \"Ticket times under 15 minutes should cut 'long wait' and 'cold food' complaints on this dish by roughly half within a month, moving the rating off 1.8★ toward the 3.5-4★ range.\""
+          }
+        ],
+        "judge": {
+          "beyondClassification": {
+            "pass": true,
+            "reason": "The statement infers a kitchen workflow mechanism (no dedicated wok station/ticket tracking causing queueing and food sitting) rather than just restating the wait-time problem."
+          },
+          "grounded": {
+            "pass": false,
+            "reason": "Details like 'without a dedicated wok station' and 'ticket-time tracking' are invented inferences not present in INPUT, and the statement says 'Peers' (plural) despite peerCount being only 1."
+          },
+          "remedySpecific": {
+            "pass": true,
+            "reason": "The remedy gives concrete, immediately actionable steps (pre-portioning ingredients, posting a ticket timer, dedicating a burner during peak hours, expo call-outs)."
+          },
+          "expectedImpactSpecific": {
+            "pass": true,
+            "reason": "The expected impact names a specific complaint reduction (roughly half) and a rating range (1.8★ to 3.5-4★) with a timeframe, avoiding vague or placeholder language."
+          },
+          "confidenceCalibrated": {
+            "pass": false,
+            "reason": "A confidence of 0.62 is too high given the peer benchmark rests on only a single competitor (peerCount=1), which should pull confidence down more than it does."
+          }
+        }
+      },
+      {
+        "id": "scn-06:rev-0051",
+        "label": "Pizza Corner · Quality",
+        "codeChecks": [
+          {
+            "name": "confidence in range",
+            "pass": true,
+            "detail": "confidence=0.6"
+          },
+          {
+            "name": "evidence count 1-4",
+            "pass": true,
+            "detail": "count=3"
+          },
+          {
+            "name": "remedy steps 2-4",
+            "pass": true,
+            "detail": "count=4"
+          },
+          {
+            "name": "remedy not a platitude",
+            "pass": true,
+            "detail": "no banned phrase"
+          },
+          {
+            "name": "evidence cites a figure",
+            "pass": true,
+            "detail": "has a digit"
+          },
+          {
+            "name": "expectedImpact is a real answer",
+            "pass": true,
+            "detail": "ok: \"Should cut 'doughy/soggy' complaints by 60-80% within 3-4 weeks and move this dish's rating from 2★ toward the 3.5-3.8★ peer range, since price is already competitive.\""
+          }
+        ],
+        "judge": {
+          "beyondClassification": {
+            "pass": true,
+            "reason": "The statement infers a specific causal mechanism (oven thermostat drift, overcrowded deck, or fixed-timer pulling causing undercooked centers) rather than merely restating 'quality problem.'"
+          },
+          "grounded": {
+            "pass": false,
+            "reason": "The output invents an attribution not present in INPUT by claiming the positive themes ('hot & fresh', 'reliable quality', 'great value') come specifically from peer restaurants' customers, when INPUT only lists these as generic themes without specifying their source."
+          },
+          "remedySpecific": {
+            "pass": true,
+            "reason": "The remedy gives concrete, immediately actionable steps (buy an infrared thermometer, measure deck temp at open/mid-rush/close, adjust batch size, switch to visual bake-checks, do lift tests every 5th pizza) that could start this week."
+          },
+          "expectedImpactSpecific": {
+            "pass": true,
+            "reason": "The expectedImpact names a specific complaint reduction (60-80%) and a rating target range (2★ to 3.5-3.8★) tied to the peer benchmark, giving a concrete and plausible magnitude."
+          },
+          "confidenceCalibrated": {
+            "pass": true,
+            "reason": "A moderate 0.6 confidence reasonably reflects a strong rating gap and thematic contrast tempered by a small peer sample (only 3 peers) and limited negative theme diversity."
+          }
+        }
+      }
+    ],
+    "summary": {
+      "cases": 6,
+      "errored": 0,
+      "codePassRate": 1,
+      "judgePassRate": 0.7333333333333333
+    }
+  }
+]

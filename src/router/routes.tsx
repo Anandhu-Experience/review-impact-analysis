@@ -6,6 +6,7 @@ import ReviewsPage from '../pages/ReviewsPage';
 import AnalysisPage from '../pages/AnalysisPage';
 import ActionPlanPage from '../pages/ActionPlanPage';
 import ImpactPage from '../pages/ImpactPage';
+import EvalsPage from '../pages/EvalsPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { path: '/analysis/:reviewId', element: <AnalysisPage /> },
       { path: '/action-plan', element: <ActionPlanPage /> },
       { path: '/impact', element: <ImpactPage /> },
+      { path: '/evals', element: <EvalsPage /> },
     ],
   },
   { path: '/', element: <Navigate to="/dashboard" replace /> },

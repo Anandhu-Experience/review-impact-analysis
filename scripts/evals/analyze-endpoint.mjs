@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
@@ -25,6 +25,8 @@ import { loadEvalModules } from './loadModules.mjs';
 
 const JUDGE_MODEL = 'claude-sonnet-5';
 const REPORT_DIR = 'scripts/evals/reports';
+const HISTORY_PATH = 'src/data/evalHistory.json';
+const HISTORY_LIMIT = 20;
 const BANNED_REMEDY_PHRASES = [
   'improve service',
   'better service',
@@ -36,6 +38,7 @@ const BANNED_REMEDY_PHRASES = [
   'work on it',
   'pay more attention',
 ];
+const PLACEHOLDER_VALUES = ['placeholder', 'tbd', 'tbc', 'n/a', 'na', 'to be determined', 'unknown', 'pending', 'todo'];
 
 function loadApiKey() {
   if (process.env.ANTHROPIC_API_KEY) return true;
@@ -116,6 +119,26 @@ function runCodeChecks(analysis) {
   const evidenceText = analysis.evidence.map((e) => e.detail).join(' ');
   push('evidence cites a figure', /\d/.test(evidenceText), /\d/.test(evidenceText) ? 'has a digit' : 'no digit found');
 
+  // Caught in the wild: the schema only requires expectedImpact to be *a string* — it
+  // happily accepts a lazy "placeholder" and calls it satisfied. This checks it's actually
+  // an answer to "what should move, and roughly by how much" — a real quantity, not a stub.
+  const impact = analysis.remedy.expectedImpact.trim();
+  const impactLower = impact.toLowerCase();
+  const isPlaceholder = PLACEHOLDER_VALUES.some((p) => impactLower === p || impactLower.includes(p));
+  const hasQuantity = /\d/.test(impact);
+  const longEnough = impact.length >= 15;
+  push(
+    'expectedImpact is a real answer',
+    !isPlaceholder && hasQuantity && longEnough,
+    isPlaceholder
+      ? `looks like a placeholder: "${impact}"`
+      : !hasQuantity
+        ? `no quantity found: "${impact}"`
+        : !longEnough
+          ? `too short: "${impact}"`
+          : `ok: "${impact}"`,
+  );
+
   return checks;
 }
 
@@ -123,6 +146,7 @@ const JudgeSchema = z.object({
   beyondClassification: z.object({ pass: z.boolean(), reason: z.string() }),
   grounded: z.object({ pass: z.boolean(), reason: z.string() }),
   remedySpecific: z.object({ pass: z.boolean(), reason: z.string() }),
+  expectedImpactSpecific: z.object({ pass: z.boolean(), reason: z.string() }),
   confidenceCalibrated: z.object({ pass: z.boolean(), reason: z.string() }),
 });
 
@@ -139,7 +163,11 @@ Rules to check:
    INPUT — even if it sounds plausible.
 3. remedySpecific — the remedy must be concrete enough to start this week. Generic advice
    ("improve service", "be more attentive", "work harder") fails regardless of how it's phrased.
-4. confidenceCalibrated — confidence should track evidence strength in INPUT: no peer benchmark,
+4. expectedImpactSpecific — remedy.expectedImpact must name what should move (a rating,
+   percentage, or complaint count) and roughly by how much. Fail anything vague ("things will
+   improve"), a stub value ("placeholder", "TBD"), or a magnitude that doesn't plausibly follow
+   from the evidence in INPUT.
+5. confidenceCalibrated — confidence should track evidence strength in INPUT: no peer benchmark,
    few themes, or a low review frequency should pull confidence down; strong peer gap and rich
    theme contrast can support higher confidence. Flag both overconfidence on thin evidence and
    needless hedging on strong evidence.`;
@@ -151,7 +179,7 @@ ${JSON.stringify(input, null, 2)}
 OUTPUT (what the model under test produced):
 ${JSON.stringify(analysis, null, 2)}
 
-Grade OUTPUT against the four rules. Keep each reason to one sentence.`;
+Grade OUTPUT against the five rules. Keep each reason to one sentence.`;
 
   const response = await client.messages.parse({
     model: JUDGE_MODEL,
@@ -178,6 +206,23 @@ function printCase(result) {
       console.log(`  ${v.pass ? '✓' : '✗'} [judge] ${key} — ${v.reason}`);
     }
   }
+}
+
+/**
+ * Findings only (checks + judge verdicts), never the raw model input/output — that keeps this
+ * committed file small across many runs. The full per-run detail (including the raw analysis)
+ * still lands in the gitignored REPORT_DIR for local debugging.
+ */
+async function appendHistory(run) {
+  let history = [];
+  try {
+    history = JSON.parse(await readFile(HISTORY_PATH, 'utf8'));
+  } catch {
+    history = [];
+  }
+  history.push(run);
+  if (history.length > HISTORY_LIMIT) history = history.slice(history.length - HISTORY_LIMIT);
+  await writeFile(HISTORY_PATH, `${JSON.stringify(history, null, 2)}\n`);
 }
 
 async function main() {
@@ -231,10 +276,21 @@ async function main() {
   console.log(`code-based checks: ${(codePassRate * 100).toFixed(0)}% pass (${flatCodeChecks.length} checks)`);
   console.log(`judge checks: ${(judgePassRate * 100).toFixed(0)}% pass (${flatJudgeChecks.length} checks)`);
 
+  const timestamp = new Date().toISOString();
+
   await mkdir(REPORT_DIR, { recursive: true });
-  const reportPath = join(REPORT_DIR, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  const reportPath = join(REPORT_DIR, `${timestamp.replace(/[:.]/g, '-')}.json`);
   await writeFile(reportPath, JSON.stringify(results, null, 2));
   console.log(`\nFull report: ${reportPath}`);
+
+  await appendHistory({
+    timestamp,
+    model: results.find((r) => r.model)?.model ?? 'unknown',
+    judgeModel: JUDGE_MODEL,
+    cases: results.map((r) => ({ id: r.id, label: r.label, error: r.error, codeChecks: r.codeChecks, judge: r.judge })),
+    summary: { cases: results.length, errored, codePassRate, judgePassRate },
+  });
+  console.log(`History appended: ${HISTORY_PATH} (commit this to show it on /evals)`);
 
   // Hard-fail CI only on the deterministic checks and outright errors — a judge disagreement
   // is a strong signal worth reading, not grounds to block a deploy on its own.
